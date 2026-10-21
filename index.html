@@ -212,9 +212,11 @@ details summary{cursor:pointer;font-size:13px;color:var(--accent)}
 .tobar{position:absolute;top:4px;bottom:4px;border-radius:3px}.tobar.l{right:50%}.tobar.r{left:50%}
 .tobar.dn{background:var(--muted);opacity:.7}.tobar.up{background:var(--accent)}
 .toval{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
-@media (max-width:640px){.otab td:first-child,.otab th:first-child{white-space:normal;min-width:120px;max-width:140px}.torow{grid-template-columns:1fr;gap:2px}.tonm{font-weight:500}}
+@media (max-width:640px){.mh{display:none}.otab td:first-child,.otab th:first-child{white-space:normal;min-width:120px;max-width:140px}.torow{grid-template-columns:1fr;gap:2px}.tonm{font-weight:500}}
 .ow{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}.ow.ok{color:var(--good);border-color:var(--good)}.ow.bad{color:var(--bad);border-color:var(--bad)}
 .pbt tr.mut td{color:var(--muted)}
+.pbt td.wr{white-space:normal}
+@media (max-width:640px){.pbt td.wr{min-width:150px;font-size:12px}}
 </style>
 
 <div class="wrap" id="app">
@@ -1088,8 +1090,8 @@ function optOut2(){
   const fd=M.fd;
   const flag=d=>{const a=Math.abs(d);return a>0.5?'<span class="ow bad">gerçekçi değil</span>':a>0.25?'<span class="ow">zorlu</span>':'<span class="ow ok">makul</span>';};
   const rowsH=A.rows.map(x=>x.ok?
-    '<tr><td>'+esc(x.lv.name)+'</td><td class="n">'+optFv(x.v0,x.lv.u)+'</td><td class="n">'+optFv(x.v1,x.lv.u)+'</td><td class="n">'+(x.d>=0?'+':'−')+'%'+Math.abs(x.d*100).toFixed(1).replace('.',',')+'</td><td>'+flag(x.d)+'</td></tr>':
-    '<tr class="mut"><td>'+esc(x.lv.name)+'</td><td class="n">'+optFv(x.v0,x.lv.u)+'</td><td class="n" colspan="2">tek başına yetmez (en iyi: '+M.fm(T>base?x.r.max:x.r.min)+')</td><td><span class="ow bad">ulaşılamaz</span></td></tr>').join('');
+    '<tr><td>'+esc(x.lv.name)+'</td><td class="n mh">'+optFv(x.v0,x.lv.u)+'</td><td class="n">'+optFv(x.v1,x.lv.u)+'</td><td class="n">'+(x.d>=0?'+':'−')+'%'+Math.abs(x.d*100).toFixed(1).replace('.',',')+'</td><td>'+flag(x.d)+'</td></tr>':
+    '<tr class="mut"><td>'+esc(x.lv.name)+'</td><td class="n mh">'+optFv(x.v0,x.lv.u)+'</td><td class="n wr" colspan="2">tek başına yetmez (en iyi: '+M.fm(T>base?x.r.max:x.r.min)+')</td><td><span class="ow bad">ulaşılamaz</span></td></tr>').join('');
   const ok=A.rows.filter(x=>x.ok),pick=o.pick&&ok.find(x=>x.lv.id===o.pick)?ok.find(x=>x.lv.id===o.pick):ok[0];
   let drill='';
   if(pick){
@@ -1097,7 +1099,7 @@ function optOut2(){
     const row=(l,a,b,f)=>'<tr><td>'+l+'</td><td class="n">'+f(a)+'</td><td class="n">'+f(b)+'</td><td class="n">'+(b-a>=0?'+':'−')+nf.format(Math.abs(Math.round(b-a)))+'</td></tr>';
     drill='<div class="panel"><div class="rowh"><h2>Seçilen çözüm</h2><div class="fld" style="min-width:260px"><select id="op-pick" data-opt="pick" aria-label="Kaldıraç">'+ok.map(x=>'<option value="'+x.lv.id+'"'+(x.lv.id===pick.lv.id?' selected':'')+'>'+esc(x.lv.name)+'</option>').join('')+'</select></div></div>'+
      '<p><b>'+esc(pick.lv.name)+'</b> '+optFv(pick.v0,pick.lv.u)+' değerinden <b>'+optFv(pick.v1,pick.lv.u)+'</b> değerine ('+(pick.d>=0?'+':'−')+'%'+Math.abs(pick.d*100).toFixed(1).replace('.',',')+') gelirse '+M.n+' <b>'+M.fm(pick.got)+'</b> olur.</p>'+
-     '<div class="scroll"><table class="pbt"><thead><tr><th></th><th class="n">Şimdi</th><th class="n">Çözümde</th><th class="n">Fark</th></tr></thead><tbody>'+
+     '<div class="scroll"><table class="pbt otab"><thead><tr><th></th><th class="n">Şimdi</th><th class="n">Çözümde</th><th class="n">Fark</th></tr></thead><tbody>'+
      row('Toplam gelir',sum(c0.rev),sum(c1.rev),fmt)+row('GOP',sum(c0.gop),sum(c1.gop),fmt)+row('NOI (FF&E sonrası)',sum(c0.noi),sum(c1.noi),fmt)+
      '<tr><td>Doluluk</td><td class="n">'+pct(sum(c0.sold)/sum(c0.avail))+'</td><td class="n">'+pct(sum(c1.sold)/sum(c1.avail))+'</td><td></td></tr>'+
      '<tr><td>ADR</td><td class="n">'+nf2.format(sum(c0.roomRev)/sum(c0.sold))+'</td><td class="n">'+nf2.format(sum(c1.roomRev)/(sum(c1.sold)||1))+'</td><td></td></tr></tbody></table></div>'+
@@ -1108,7 +1110,7 @@ function optOut2(){
     '<div class="kpi"><small>Tek başına ulaşan</small><b>'+ok.length+' / '+A.rows.length+'</b><em>kaldıraç</em></div></div>'+
     '<div class="panel"><h2>Hedefe ulaşmak için her kaldıracın gereken değeri</h2>'+
     '<p class="hint" style="margin:0 0 8px">Her satır, başka hiçbir şeye dokunmadan yalnız o kaldıracı çevirir. Sıralama: gereken değişim en küçük olandan büyüğe. Makul: ±%25 içinde, zorlu: ±%50 içinde.</p>'+
-    '<div class="scroll"><table class="pbt otab"><thead><tr><th>Kaldıraç</th><th class="n">Şimdi</th><th class="n">Gereken</th><th class="n">Değişim</th><th>Durum</th></tr></thead><tbody>'+rowsH+'</tbody></table></div></div>'+drill;
+    '<div class="scroll"><table class="pbt otab"><thead><tr><th>Kaldıraç</th><th class="n mh">Şimdi</th><th class="n">Gereken</th><th class="n">Değişim</th><th>Durum</th></tr></thead><tbody>'+rowsH+'</tbody></table></div></div>'+drill;
 }
 function viewOpt2(){
   const o=optOf(),p=P(),M=OPT_METRICS[o.metric],base=M.get(p),ok=base!==null&&base!==undefined&&isFinite(base);
