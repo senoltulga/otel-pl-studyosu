@@ -218,6 +218,22 @@ details summary{cursor:pointer;font-size:13px;color:var(--accent)}
 .pbt td.wr{white-space:normal}
 @media (max-width:640px){.pbt td.wr{min-width:150px;font-size:12px}}
 .pft td input[type=text]{min-width:190px}.pft td{vertical-align:middle}
+
+.rps h2{display:flex;align-items:center;gap:10px}.rpnum{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;flex:none}
+.rpsay,.rpdo{border-left:3px solid var(--accent);background:var(--surface);padding:8px 12px;margin:8px 0;border-radius:0 6px 6px 0}.rpdo{border-left-color:var(--good)}
+.rpsay>b,.rpdo>b{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}.rpsay p,.rpdo p{margin:4px 0 0;line-height:1.55}
+.rpviz{margin-top:12px}.rph{font-size:14px;margin:14px 0 6px}
+.rpb{display:flex;flex-direction:column;gap:6px}
+.rpr{display:grid;grid-template-columns:220px 1fr 150px;gap:10px;align-items:center}
+.rpn{font-size:13px}.rpt{position:relative;height:18px;background:var(--surface);border-radius:3px}
+.rpt u{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.rpt i{position:absolute;top:2px;bottom:2px;border-radius:3px;background:var(--accent)}.rpt i.good{background:var(--good)}.rpt i.bad{background:var(--bad)}.rpt i.warn{background:#d9a441}
+.rpv{font-family:var(--mono);font-size:12px;display:flex;flex-direction:column;align-items:flex-start;gap:2px}.rpv small{font-family:inherit}
+.rpul{margin:8px 0 0;padding-left:18px;line-height:1.6;font-size:13px}
+.rpbrief td{vertical-align:top;white-space:normal}
+input[type=range]{width:100%}
+@media (max-width:640px){.rpr{grid-template-columns:1fr 90px;gap:2px 8px}.rpn{grid-column:1 / -1}}
+@media print{header.top,nav.tabs,.osub,.noprint,.toast,#dlg{display:none!important}body{background:#fff}.panel{break-inside:avoid;box-shadow:none}.rpviz{break-inside:auto}}
 </style>
 
 <div class="wrap" id="app">
@@ -1078,9 +1094,9 @@ document.addEventListener('change',e=>{
 
 function optSub(){
   const m=S.optMod||1,b=(i,t,on)=>'<button data-optmod="'+i+'" class="'+(m===i?'on':'')+'" aria-pressed="'+(m===i)+'"'+(on?'':' disabled title="Sıradaki modül"')+'>'+t+'</button>';
-  return '<div class="osub" role="group" aria-label="Optimizasyon modülleri">'+b(1,'1 Duyarlılık',1)+b(2,'2 Hedef arama',1)+b(3,'3 Capex portföyü',1)+b(4,'4 Fiyat-doluluk',1)+'</div>';
+  return '<div class="osub" role="group" aria-label="Optimizasyon modülleri">'+b(1,'1 Duyarlılık',1)+b(2,'2 Hedef arama',1)+b(3,'3 Capex portföyü',1)+b(4,'4 Fiyat-doluluk',1)+b(5,'★ Özet rapor',1)+'</div>';
 }
-function viewOptim(){const m=S.optMod||1;return m===4?viewOpt4():m===3?viewOpt3():m===2?viewOpt2():viewOpt1();}
+function viewOptim(){const m=S.optMod||1;return m===5?viewOpt5():m===4?viewOpt4():m===3?viewOpt3():m===2?viewOpt2():viewOpt1();}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-optmod]');if(!b||b.disabled)return;S.optMod=+b.dataset.optmod;render();});
 
 /* ---------- Modül 2: Hedef arama. Bir sonuç için hedef değer girilir, her kaldıracın tek başına gereken değişimi bulunur ---------- */
@@ -1373,6 +1389,164 @@ function viewOpt4(){
   document.addEventListener('change',e=>{
     const t=e.target,k=t.dataset&&t.dataset.pdsel;if(!k)return;
     pdEdit(P())[k]=k==='obj'?t.value:+t.value;save();refresh();
+  });
+})();
+
+/* ---------- Özet rapor: dört modülün sonuçlarını sade Türkçe, grafik ve etkileşimli kontrollerle anlatır. Hesap yok, yalnız modül fonksiyonlarını çağırır ---------- */
+const RP_DEF={tgt:20,step:10,eps:null,ok:false,m:0};
+const rpOf=()=>{const o=optOf();if(!o.rp)o.rp=Object.assign({},RP_DEF);return o.rp;};
+const rpP=v=>'%'+Math.abs(v).toFixed(1).replace('.',',');
+const rpN=v=>(v<0?'−':'')+nf.format(Math.abs(Math.round(v)));
+const rpD=v=>(v>=0?'+':'−')+rpP(v);
+function rpBars(items,fv){
+  const lo=Math.min(0,...items.map(x=>x.v)),hi=Math.max(0,...items.map(x=>x.v)),sp=(hi-lo)||1,z=-lo/sp*100;
+  return '<div class="rpb">'+items.map(x=>{const l=(Math.min(x.v,0)-lo)/sp*100,w=Math.abs(x.v)/sp*100;
+    return '<div class="rpr"><div class="rpn">'+x.n+'</div><div class="rpt"><u style="left:'+z.toFixed(2)+'%"></u><i class="'+(x.c||'')+'" style="left:'+l.toFixed(2)+'%;width:'+Math.max(w,.6).toFixed(2)+'%"></i></div><div class="rpv">'+fv(x.v)+(x.note?'<small>'+x.note+'</small>':'')+'</div></div>';}).join('')+'</div>';
+}
+function rpCols(vals,labs,tit){
+  const W=720,H=190,l=52,r=8,t=12,bt=24,mx=Math.max(0,...vals),mn=Math.min(0,...vals),sp=(mx-mn)||1,Y=v=>t+(mx-v)/sp*(H-t-bt),bw=(W-l-r)/vals.length;
+  let s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(tit)+'">';
+  for(let k=0;k<=3;k++){const v=mn+sp*k/3,y=Y(v);s+='<line class="grid" x1="'+l+'" x2="'+(W-r)+'" y1="'+y+'" y2="'+y+'"/><text x="'+(l-6)+'" y="'+(y+3)+'" text-anchor="end">'+nf.format(v/1000)+'</text>';}
+  vals.forEach((v,i)=>{const x0=l+i*bw+bw*.18,y0=Y(0),y1=Y(v);s+='<rect class="'+(v<0?'pbn':'pbp')+'" x="'+x0+'" width="'+(bw*.64)+'" y="'+Math.min(y0,y1)+'" height="'+Math.max(1,Math.abs(y1-y0))+'"><title>'+esc(labs[i])+': '+optS(v)+'</title></rect><text x="'+(x0+bw*.32)+'" y="'+(H-8)+'" text-anchor="middle">'+esc(labs[i].slice(0,3))+'</text>';});
+  return s+'</svg>';
+}
+function rpLines(a,b,labs,tit){
+  const W=720,H=200,l=52,r=8,t=12,bt=24,all=a.concat(b),mx=Math.max(...all),mn=Math.min(...all),sp=(mx-mn)||1,Y=v=>t+(mx-v)/sp*(H-t-bt),X=i=>l+(i+.5)*(W-l-r)/a.length;
+  let s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(tit)+'">';
+  for(let k=0;k<=3;k++){const v=mn+sp*k/3,y=Y(v);s+='<line class="grid" x1="'+l+'" x2="'+(W-r)+'" y1="'+y+'" y2="'+y+'"/><text x="'+(l-6)+'" y="'+(y+3)+'" text-anchor="end">'+nf.format(Math.round(v))+'</text>';}
+  const pl=(v,c,d)=>'<polyline fill="none" stroke="'+c+'" stroke-width="2"'+(d?' stroke-dasharray="5 4"':'')+' points="'+v.map((x,i)=>X(i).toFixed(1)+','+Y(x).toFixed(1)).join(' ')+'"/>'+v.map((x,i)=>'<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(x).toFixed(1)+'" r="3" fill="'+c+'"><title>'+esc(labs[i])+': '+nf2.format(x)+'</title></circle>').join('');
+  s+=pl(a,'var(--muted)',1)+pl(b,'var(--accent)',0);
+  labs.forEach((m,i)=>{s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle">'+esc(m.slice(0,3))+'</text>';});
+  return s+'</svg>';
+}
+function rpCalc(){
+  const p=P(),o=optOf(),rp=rpOf(),cu=CUR(),c0=compute(p),base=sum(c0.noi),M=OPT_METRICS.noi;
+  const det=o.detail;o.detail='group';
+  const s1=optSens(p,'noi',+rp.step||10,'group');
+  const T=base+Math.abs(base)*rp.tgt/100,A=optSolveAll(p,'noi',T);
+  const lvs=optLevers(p,'group'),oc=lvs.find(x=>x.id==='occ'),ad=lvs.find(x=>x.id==='adr');
+  let both=null;
+  if(oc&&ad){const lv={id:'both',name:'Doluluk ve ADR birlikte (aynı oranda)',ap:(q,f)=>{oc.ap(q,f);ad.ap(q,f);}};const r=optSolve(p,lv,'noi',T);if(r.ok){const q=pclone(p);lv.ap(q,r.f);const k=compute(q);both={f:r.f,d:r.f-1,occ1:sum(k.sold)/sum(k.avail)*100,adr1:sum(k.roomRev)/(sum(k.sold)||1)};}}
+  o.detail=det;
+  const pf=pfView(p),cx=pfCtx(p),R3=pf.items.length?pfSolve(pf,cx):null;
+  const B3=R3&&!R3.infeasible?pfSolve(pf,cx,{mustOnly:true}):null,F3=R3&&!R3.infeasible&&pbN(pf.cap)>0?pfSolve(pf,cx,{noCap:true}):null;
+  const pd=Object.assign({},pdView(p),{obj:'noi'}),ov=rp.eps===null||rp.eps===undefined?null:+rp.eps,R4=pdSolve(p,pd,ov);
+  const sens=R4.err?[]:[-0.6,-1,-1.5,-2,-3].map(e=>{const r=pdSolve(p,pd,e);return {e,g:r.total-r.total0};});
+  return {p,cu,c0,base,M,s1,T,A,both,pf,cx,R3,B3,F3,pd,R4,sens,rp,epsUsed:ov===null?pbN(pd.eps):ov,occ0:sum(c0.sold)/sum(c0.avail)*100,adr0:sum(c0.roomRev)/(sum(c0.sold)||1)};
+}
+/* her bölüm: {say: kısaca cümleleri, do: ne yapmalı, html: grafik+tablo, brief: özet tablo satırı} */
+function rpS1(X){
+  const r=X.s1,rows=r.rows;if(!rows.length)return {say:'Duyarlılık hesaplanamadı.',do:'',html:'',brief:['Duyarlılık','hesaplanamadı','',''],conf:['Yüksek','ok']};
+  const top=rows.slice(0,3),tot=sum(rows.map(x=>x.swing)),sh=top.reduce((a,x)=>a+x.swing,0)/(tot||1),t=rows[0],half=Math.abs(t.hi-t.lo)/2;
+  const rev=['occ','adr','guests'].includes(t.lv.id);
+  const say='Girdilerin hepsini %'+r.step+' oynattığımızda NOI en çok <b>'+esc(top.map(x=>x.lv.name).join(', '))+'</b> kalemlerinden etkileniyor. En duyarlısı <b>'+esc(t.lv.name)+'</b>: %'+r.step+' değişirse NOI yaklaşık <b>'+nf.format(Math.round(half))+' '+X.cu+'</b> ('+rpP(half/Math.abs(X.base)*100)+') oynuyor. İlk üç kalem toplam etkinin %'+Math.round(sh*100)+'\'ini oluşturuyor, geri kalanı küçük.';
+  const dop=rev?'Önce gelir tarafına bakın (doluluk, ADR). Bütçe toplantısında ve müzakerede vakti bu üç kalemde harcayın; küçük gider kalemlerinde yapılan pazarlık sonucu çok az değiştirir.':'Bu giderin kontrolü, sonucun en kritik kaldıracı. Sözleşme, vardiya veya tedarik pazarlığına ilk burada başlayın.';
+  const rr={rows:rows.slice(0,8),step:r.step};
+  const html='<div class="legend"><span><i style="background:var(--muted)"></i>Girdi %'+r.step+' azalırsa</span><span><i style="background:var(--accent)"></i>Girdi %'+r.step+' artarsa</span></div>'+optChart(rr,X.M)+'<p class="hint">Çubuk uzunluğu, o girdi tek başına değiştiğinde NOI\'nin ne kadar oynadığını gösterir ('+X.cu+', yıllık). En fazla 8 kalem gösterilir.</p>';
+  return {say,do:dop,html,brief:['Neye duyarlıyız?',esc(t.lv.name)+' (%'+r.step+' → '+nf.format(Math.round(half))+' '+X.cu+')',rev?'Gelire odaklanın':'Bu gider kalemini yönetin'],conf:['Yüksek','ok']};
+}
+function rpS2(X){
+  const rp=X.rp,A=X.A,ok=A.rows.filter(x=>x.ok),mk=ok.filter(x=>Math.abs(x.d)<=0.25),fl=d=>{const a=Math.abs(d);return a>.5?'<span class="ow bad">gerçekçi değil</span>':a>.25?'<span class="ow">zorlu</span>':'<span class="ow ok">makul</span>';};
+  const lead=ok[0],cu=X.cu;
+  let say='NOI\'yu <b>'+rpD(rp.tgt)+'</b> artırmak ('+fmt(X.base)+' → <b>'+fmt(X.T)+'</b> '+cu+') için <b>'+ok.length+' / '+A.rows.length+'</b> kaldıraç tek başına yeterli ulaşabiliyor, bunlardan <b>'+mk.length+'</b> tanesi makul (±%25 içinde).';
+  if(lead)say+=' En kolay yol: <b>'+esc(lead.lv.name)+'</b> '+optFv(lead.v0,lead.lv.u)+' → '+optFv(lead.v1,lead.lv.u)+' ('+rpD(lead.d*100)+').';
+  if(X.both)say+=' Doluluk ve ADR birlikte çevrilirse ikisinde de yalnızca <b>'+rpD(X.both.d*100)+'</b> yeter (doluluk '+nf2.format(X.occ0)+' → '+nf2.format(X.both.occ1)+' %, ADR '+nf2.format(X.adr0)+' → '+nf2.format(X.both.adr1)+' '+cu+').';
+  const none=A.rows.filter(x=>!x.ok).length;
+  if(none)say+=' '+none+' kaldıraç ne kadar çevrilirse çevrilsin tek başına hedefe yetmiyor.';
+  const dop=!ok.length?'Hedef tek bir kaldıraçla ulaşılabilir değil. Hedefi düşürün veya birkaç kaldıracı birlikte planlayın.':mk.length?'Önce "makul" işaretli kaldıraçlara odaklanın. Hedefi sunarken hangi kaldıracın ne kadar çevrileceğini açıkça yazın: "ADR '+(lead?optFv(lead.v1,lead.lv.u):'')+' olacak" gibi ölçülebilir bir cümle ekibe daha iyi iletilir.':'Tek kaldıraçla gerçekçi bir yol yok. Birkaç kaldıracı birlikte planlayın veya hedefi küçültün.';
+  const items=(rp.ok?ok.filter(x=>Math.abs(x.d)<=.25):ok).map(x=>({n:esc(x.lv.name),v:Math.abs(x.d)*100,c:Math.abs(x.d)>.5?'bad':Math.abs(x.d)>.25?'warn':'good',note:fl(x.d)}));
+  if(X.both)items.unshift({n:'<b>Doluluk + ADR birlikte</b>',v:Math.abs(X.both.d)*100,c:Math.abs(X.both.d)>.5?'bad':Math.abs(X.both.d)>.25?'warn':'good',note:fl(X.both.d)});
+  items.sort((a,b)=>a.v-b.v);
+  const html='<p class="hint" style="margin:0 0 6px">Her çubuk, hedefe ulaşmak için o kaldıracın <b>tek başına</b> yüzde kaç değişmesi gerektiğini gösterir. Kısa çubuk = kolay yol.</p>'+(items.length?rpBars(items,v=>'%'+v.toFixed(1).replace('.',',')):'<p class="hint">Gösterilecek kaldıraç yok.</p>');
+  return {say,do:dop,html,brief:['Hedef '+rpD(rp.tgt)+' NOI',lead?esc(lead.lv.name)+' '+rpD(lead.d*100)+'; '+mk.length+' makul yol':'tek kaldıraç yetmiyor',mk.length?'Makul yollara odaklan':'Hedefi düşür veya birleştir'],conf:['Yüksek','ok']};
+}
+function rpS3(X){
+  const R=X.R3,B=X.B3,F=X.F3,pf=X.pf,cu=X.cu;
+  if(!R)return {say:'Capex portföyünde aday kalem yok.',do:'"Capex portföyü" modülünde kalem ekleyin.',html:'',brief:['Renovasyon planı','aday kalem yok','Kalem ekleyin'],conf:['–','']};
+  if(R.infeasible)return {say:'Bütçe tavanı altında zorunlu kalemler sığmıyor.',do:'Capex portföyü modülünde tavanı yükseltin veya zorunlu kalemin "en geç yıl" değerini artırın.',html:'',brief:['Renovasyon planı','tavan altında sığmıyor','Tavanı gözden geçir'],conf:['–','']};
+  const opt=pf.items.map((it,i)=>({it,i,y:R.choice[i]})).filter(x=>x.y>=0&&!x.it.must),must=pf.items.map((it,i)=>({it,i,y:R.choice[i]})).filter(x=>x.y>=0&&x.it.must);
+  const extra=B&&!B.infeasible?R.npv-B.npv:null;
+  let say;
+  if(opt.length)say='En iyi plan: '+opt.map(x=>'<b>'+esc(x.it.name)+'</b> (yıl '+x.y+')').join(', ')+(must.length?'; zorunlu '+must.map(x=>esc(x.it.name)+' (yıl '+x.y+')').join(', '):'')+'. Bu planın net bugünkü değeri <b>'+rpN(R.npv)+' '+cu+'</b>'+(R.pay!==null?', geri dönüşü <b>'+pbYr(R.pay,R.N)+'</b>':'')+'.';
+  else say='Bu varsayımlarda isteğe bağlı renovasyon kalemlerinden <b>hiçbiri kendini geri ödemiyor</b>; yalnız zorunlu işleri ('+must.map(x=>esc(x.it.name)+' yıl '+x.y).join(', ')+') yapmak en iyi sonucu veriyor (net bugünkü değer '+rpN(R.npv)+' '+cu+').';
+  if(extra!==null&&opt.length)say+=' İsteğe bağlı yatırımlar, yalnız zorunlu işleri yapmaya göre <b>'+optS(extra)+' '+cu+'</b> ek değer katıyor.';
+  if(F&&F.npv-R.npv>1)say+=' Yıllık bütçe tavanı yüzünden <b>'+rpN(F.npv-R.npv)+' '+cu+'</b> değer kaybediliyor.';
+  const dop=opt.length?'Kalemleri tabloda gösterilen yıllara yayın. '+(F&&F.npv-R.npv>1?'Tavanı gevşetmek mümkünse (ör. ek kredi veya ortak finansmanı) değer artar.':'Takvimi bütçe döneminize taşıyın.'):'Renovasyonu bu varsayımlarla ertelemek veya ADR artışı varsayımını gerçek pazar verisiyle doğrulamak daha doğru. ADR artışı yüksek çıkarsa sonuç değişir.';
+  const sc=[{n:'Yalnız zorunlu işler',v:B&&!B.infeasible?B.npv:0,c:''},{n:'<b>Önerilen plan</b>',v:R.npv,c:'good'}];
+  if(F)sc.push({n:'Tavansız optimum',v:F.npv,c:'warn',note:'bütçe sınırı olmasaydı'});
+  const rowsI=pf.items.map((it,i)=>{const y=R.choice[i],f=y>=0?R.fl[i][y]:null;
+    return '<tr'+(y<0?' class="mut"':'')+'><td>'+esc(it.name)+(it.must?' <span class="ow">zorunlu</span>':'')+'</td><td>'+(y>=0?'Yıl '+y:'yapma')+'</td><td class="n">'+(f?rpN(sum(f.cap)):'–')+'</td><td class="n mh">'+(f?rpN(sum(f.up)):'–')+'</td><td class="n">'+(f?rpN(f.npv):'–')+'</td></tr>';}).join('');
+  const html='<h3 class="rph">Üç senaryonun net bugünkü değeri ('+cu+')</h3>'+rpBars(sc,v=>rpN(v))+
+   '<h3 class="rph">Önerilen planın kümülatif net etkisi (bin '+cu+')</h3><div class="legend"><span><i style="background:var(--bad)"></i>Geri dönmemiş</span><span><i style="background:var(--good)"></i>Geri dönmüş</span></div>'+cpxChart({rows:R.rows})+
+   '<div class="scroll"><table class="pbt otab"><thead><tr><th>Kalem</th><th>Karar</th><th class="n">Capex</th><th class="n mh">Artan gelir</th><th class="n">NPV katkısı</th></tr></thead><tbody>'+rowsI+'</tbody></table></div>';
+  return {say,do:dop,html,brief:['Renovasyon planı',opt.length?opt.map(x=>esc(x.it.name)+' yıl '+x.y).join(', '):'yalnız zorunlu işler',extra!==null&&opt.length?'Planı uygula, '+optS(extra)+' '+cu+' ek değer':'İsteğe bağlı kalemi erteleyin'],conf:['Orta','mid']};
+}
+function rpS4(X){
+  const R=X.R4,cu=X.cu;
+  if(R.err)return {say:esc(R.err),do:'Fiyat-doluluk modülünde esnekliği negatif girin.',html:'',brief:['Fiyat','hesaplanamadı',''],conf:['–','']};
+  const gain=R.total-R.total0,rel=R.total0?gain/Math.abs(R.total0)*100:0,up=R.mons.filter(m=>m.m>1.0001),dn=R.mons.filter(m=>m.m<0.9999),eps=X.epsUsed;
+  const mxm=R.mons.slice().sort((a,b)=>(b.v-b.v0)-(a.v-a.v0))[0],edge=R.mons.filter(m=>m.edge).length;
+  const pos=X.sens.filter(x=>x.g>0).length;
+  let say='Fiyatı aylara göre ayarlamak (esneklik ε = '+String(eps).replace('.',',')+') yıllık NOI\'yu <b>'+optS(gain)+' '+cu+'</b> ('+rpD(rel)+') değiştiriyor. <b>'+up.length+'</b> ayda fiyat artırmak, <b>'+dn.length+'</b> ayda indirmek kazandırıyor. En büyük kazanç <b>'+MONTHS[mxm.i]+'</b> ayında: ADR '+nf2.format(mxm.adr0)+' → '+nf2.format(mxm.adr)+' '+cu+' ('+optS(mxm.v-mxm.v0)+').';
+  say+=' Esneklik tahmini kaynaksız olduğu için sağlamlık testi: denenen 5 esneklikten <b>'+pos+'</b> tanesinde kazanç pozitif.';
+  if(edge)say+=' '+edge+' ayda fiyat sınırına (±%'+R.B+') dayanıldı, sınır genişletilirse sonuç değişebilir.';
+  const dop=pos>=4?'Aylık fiyat planını esneklik tahmini değişse de kazandıran bir yön olarak kullanın; önce en çok kazandıran ayda deneyin.':pos>=2?'Küçük adımlarla başlayın (önce ±%5), gerçek rezervasyon tepkisini ölçüp esnekliği güncelleyin.':'Bu sonuç esneklik varsayımına çok bağlı. Fiyat değişikliğinden önce kendi geçmiş verinizden esnekliği tahmin edin.';
+  const mi=Math.max(0,Math.min(11,+X.rp.m||0));
+  const html='<h3 class="rph">Aylık ADR: şimdi ve önerilen ('+cu+')</h3><div class="legend"><span><i style="background:var(--muted)"></i>Şimdi</span><span><i style="background:var(--accent)"></i>Önerilen</span></div>'+rpLines(R.mons.map(m=>m.adr0),R.mons.map(m=>m.adr),MONTHS,'Aylık ADR')+
+   '<h3 class="rph">Aylık NOI değişimi (bin '+cu+')</h3>'+rpCols(R.mons.map(m=>m.v-m.v0),MONTHS,'Aylık NOI değişimi')+
+   '<h3 class="rph">Esneklik tahmini yanılırsa kazanç ne olur? ('+cu+', yıllık NOI)</h3>'+rpBars(X.sens.map(x=>({n:'ε = '+String(x.e).replace('.',','),v:x.g,c:x.g>0?'good':'bad'})),v=>optS(v))+
+   '<div class="rowh" style="margin-top:12px"><h3 class="rph" style="margin:0">Fiyat eğrisi: '+MONTHS[mi]+'</h3><div class="fld" style="min-width:140px"><select data-rp="m" aria-label="Ay">'+MONTHS.map((m,i)=>'<option value="'+i+'"'+(i===mi?' selected':'')+'>'+m+'</option>').join('')+'</select></div></div>'+pdCurve(R.mons[mi],cu)+'<p class="hint">Eğrinin tepesi en iyi fiyattır. Tepe düzse fiyat hatasının maliyeti küçüktür.</p>'+
+   '<div class="scroll"><table class="pbt otab"><thead><tr><th>Ay</th><th class="n">ADR önerilen</th><th class="n">Doluluk % beklenen</th><th class="n">Fiyat</th><th class="n">Δ NOI</th></tr></thead><tbody>'+R.mons.map(m=>'<tr><td>'+MONTHS[m.i]+'</td><td class="n">'+nf2.format(m.adr)+'</td><td class="n">'+nf2.format(m.occ)+'</td><td class="n">'+rpD((m.m-1)*100)+'</td><td class="n">'+optS(m.v-m.v0)+'</td></tr>').join('')+'</tbody></table></div>';
+  return {say,do:dop,html,brief:['Fiyat politikası',optS(gain)+' '+cu+' NOI ('+rpD(rel)+'), ε '+String(eps).replace('.',','),pos>=4?'Aylık fiyatı ayarlayın':'Küçük adımla test edin'],conf:[pos>=4?'Orta':'Düşük',pos>=4?'mid':'bad']};
+}
+function rpBody(){
+  const X=rpCalc(),S1=rpS1(X),S2=rpS2(X),S3=rpS3(X),S4=rpS4(X),secs=[S1,S2,S3,S4];
+  X.secs=secs;
+  const sec=(n,q,s)=>'<section class="panel rps"><h2><span class="rpnum">'+n+'</span>'+q+'</h2><div class="rpsay"><b>Kısaca</b><p>'+s.say+'</p></div><div class="rpdo"><b>Ne yapmalı?</b><p>'+s.do+'</p></div><div class="rpviz">'+s.html+'</div></section>';
+  const brief=secs.map(s=>'<tr><td>'+s.brief[0]+'</td><td>'+s.brief[1]+'</td><td>'+s.brief[2]+'</td><td><span class="ow '+(s.conf[1]==='ok'?'ok':s.conf[1]==='bad'?'bad':'')+'">'+s.conf[0]+'</span></td></tr>').join('');
+  const p=X.p,pf=X.pf,cb=X.cx.cb;
+  return '<section class="panel rps"><h2>Karar özeti</h2><div class="scroll"><table class="pbt otab rpbrief"><thead><tr><th>Soru</th><th>Bulgu</th><th>Ne yapmalı</th><th>Güven</th></tr></thead><tbody>'+brief+'</tbody></table></div>'+
+    '<p class="hint">Güven: <b>Yüksek</b> = motorun doğrudan hesabı, varsayım yok. <b>Orta</b> = Renovasyon ve DCF sekmesindeki varsayımlara bağlı. <b>Düşük</b> = kaynaksız bir varsayıma (fiyat esnekliği) bağlı, yön gösterir, kesin sonuç değildir.</p></section>'+
+    sec(1,'Sonuç en çok neye bağlı?',S1)+sec(2,'Hedefe nasıl ulaşırız?',S2)+sec(3,'Renovasyon hangi sırayla yapılmalı?',S3)+sec(4,'Fiyatı nasıl ayarlamalı?',S4)+
+    '<section class="panel rps"><h2>Varsayımlar ve sözlük</h2><details><summary>Bu raporda kullanılan varsayımlar</summary><ul class="rpul"><li>Baz sonuç: projenin mevcut girdileriyle yıllık NOI '+fmt(X.base)+' '+X.cu+'.</li><li>Hedef: NOI '+rpD(X.rp.tgt)+' (yukarıdan değişir).</li><li>Fiyat esnekliği ε = '+String(X.epsUsed).replace('.',',')+' (kaynaksız varsayım; yukarıdan değişir). Fiyat sınırı ±%'+X.R4.B+'.</li><li>Renovasyon: iskonto %'+pbN(cb.disc)+', capex enflasyonu %'+pbN(cb.capInfl)+', gelir artışı %'+pbN(cb.gRev)+'; ADR artışı ve maliyetler Capex portföyü modülündeki tablodan gelir; ADR artışı varsayımdır.</li><li>Her modülde sonuç motor yeniden çalıştırılarak doğrulanır; ayrıntı için ilgili modüle bakın.</li></ul></details>'+
+    '<details><summary>Terimler</summary><ul class="rpul"><li><b>NOI</b>: otelin FF&amp;E rezervi düşüldükten sonra kalan işletme kârı.</li><li><b>GOP</b>: bölüm kârlarından sabit giderler düşüldükten sonraki brüt işletme kârı.</li><li><b>ADR</b>: satılan oda başına ortalama oda fiyatı.</li><li><b>Doluluk</b>: satılan oda gecesi ÷ satılabilir oda gecesi.</li><li><b>NPV (net bugünkü değer)</b>: gelecek nakit akışlarının iskonto edilerek bugüne getirilmiş toplamı. Pozitifse yatırım kendini geri öder.</li><li><b>Esneklik (ε)</b>: fiyat %1 artınca doluluğun yüzde kaç değiştiği. −1,2 ise doluluk %1,2 düşer.</li><li><b>Tavan</b>: bir yılda yapılabilecek en fazla capex tutarı.</li></ul></details></section>';
+}
+function rpText(){
+  const X=rpCalc();const secs=[rpS1(X),rpS2(X),rpS3(X),rpS4(X)];
+  const strip=h=>h.replace(/<small>[^<]*<\/small>/g,'').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&');
+  const q=['Sonuç en çok neye bağlı?','Hedefe nasıl ulaşırız?','Renovasyon hangi sırayla yapılmalı?','Fiyatı nasıl ayarlamalı?'];
+  return 'OPTİMİZASYON ÖZET RAPORU\nProje: '+(X.p.name||'')+'\nTarih: '+new Date().toLocaleDateString('tr-TR')+'\n\n'+secs.map((s,i)=>(i+1)+'. '+q[i]+'\n'+strip(s.say)+'\nNe yapmalı: '+strip(s.do)).join('\n\n')+'\n\nNot: Fiyat esnekliği ve ADR artışı varsayımdır.';
+}
+function viewOpt5(){
+  const rp=rpOf(),p=P(),pd=pdView(p),eps=rp.eps===null||rp.eps===undefined?pbN(pd.eps):+rp.eps;
+  return optSub()+'<div class="panel noprint" id="rp-ctl"><h2>Özet rapor</h2><p class="hint" style="margin:0 0 10px">Dört optimizasyon modülünün sonucunu tek sayfada, sade dille anlatır. Aşağıdaki kontrolleri oynatın, rapor anında yenilenir. Buradaki oynamalar projenizi değiştirmez.</p>'+
+   '<div class="pbform">'+
+   '<div class="fld"><label for="rp-tgt">Hedef: NOI artışı <b id="rp-tgt-v">'+rpD(rp.tgt)+'</b></label><input id="rp-tgt" type="range" min="5" max="50" step="5" value="'+rp.tgt+'" data-rp="tgt"></div>'+
+   '<div class="fld"><label for="rp-eps">Fiyat esnekliği ε <b id="rp-eps-v">'+String(eps).replace('.',',')+'</b></label><input id="rp-eps" type="range" min="-3" max="-0.4" step="0.1" value="'+eps+'" data-rp="eps"></div>'+
+   '<div class="fld"><label for="rp-step">Duyarlılık adımı</label><select id="rp-step" data-rp="step">'+[5,10,20,25].map(v=>'<option value="'+v+'"'+(+rp.step===v?' selected':'')+'>±%'+v+'</option>').join('')+'</select></div>'+
+   '<div class="fld"><label class="chk"><input type="checkbox" data-rp="ok"'+(rp.ok?' checked':'')+'> Hedef grafiğinde yalnız makul olanlar</label></div></div>'+
+   '<div class="tools" style="margin-top:10px"><span><button class="btn small" data-rpbtn="print">Yazdır / PDF</button> <button class="btn small" data-rpbtn="copy">Özeti kopyala</button> <button class="btn small" data-rpbtn="reset">Varsayılana dön</button></span></div></div>'+
+   '<div id="rp-body">'+rpBody()+'</div>';
+}
+(function(){
+  let busy=0;
+  const refresh=()=>{if(busy)return;busy=requestAnimationFrame(()=>{busy=0;const b=$('#rp-body');if(b)b.innerHTML=rpBody();});};
+  document.addEventListener('input',e=>{
+    const t=e.target,k=t.dataset&&t.dataset.rp;if(!k||t.type!=='range')return;
+    const rp=rpOf();rp[k]=+t.value;
+    const l=$('#rp-'+k+'-v');if(l)l.textContent=k==='tgt'?rpD(+t.value):String(+t.value).replace('.',',');
+    refresh();
+  });
+  document.addEventListener('change',e=>{
+    const t=e.target,k=t.dataset&&t.dataset.rp;if(!k||t.type==='range')return;
+    const rp=rpOf();rp[k]=t.type==='checkbox'?t.checked:+t.value;refresh();
+  });
+  document.addEventListener('click',e=>{
+    const b=e.target.closest&&e.target.closest('[data-rpbtn]');if(!b)return;
+    const a=b.dataset.rpbtn;
+    if(a==='print')window.print();
+    else if(a==='copy'){const t=rpText();(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Özet panoya kopyalandı'),()=>toast('Kopyalanamadı, tarayıcı izin vermedi'));}
+    else if(a==='reset'){optOf().rp=Object.assign({},RP_DEF);render();}
   });
 })();
 function render(){
