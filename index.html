@@ -167,6 +167,37 @@ textarea{width:100%;min-height:90px;font-family:var(--mono);font-size:11px}
 .kbody th,.kbody td{white-space:normal}
 .kpn{display:flex;justify-content:space-between;margin-top:20px;gap:8px}
 @media (max-width:720px){.kil{grid-template-columns:1fr}.kside{position:static;flex-direction:row;flex-wrap:wrap}}
+
+
+.mobonly{display:none}
+@media (max-width:640px){
+  .wrap{gap:12px}
+  .brand h1{font-size:20px}.brand span{display:none}
+  header.top{gap:8px}
+  .proj{gap:6px;width:100%}
+  .proj select{min-width:0;flex:1 1 150px}
+  .proj .btn{min-height:38px;padding:6px 10px;font-size:13px}
+  .proj .btn.small{min-height:34px}
+  .proj .savest{flex:1 1 100%;order:5;max-width:none}
+  #acct{display:flex;gap:6px;align-items:center;max-width:100%}
+  .strip{display:flex;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;border-radius:8px}
+  .strip>div{flex:0 0 150px;scroll-snap-align:start;padding:8px 12px}
+  .strip b{font-size:17px}
+  .tabs{overflow-x:auto;scrollbar-width:none}
+  .tabs button{min-height:40px;white-space:nowrap}
+  .panel{padding:12px}
+  .kside{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:4px}
+  .kn{white-space:nowrap;border:1px solid var(--line);min-height:38px}
+  .kbody .kh{font-size:18px}
+  .dlg{padding:3vh 10px}
+  .dbox{padding:14px}
+  .dbox .btn{min-height:40px}
+  body:not(.mshow) table.pl th:nth-child(n+2):nth-child(-n+13),body:not(.mshow) table.pl td:nth-child(n+2):nth-child(-n+13){display:none}
+  body:not(.mshow) table.pl th:nth-child(15),body:not(.mshow) table.pl td:nth-child(15){display:none}
+  .pl th:first-child,.pl td:first-child{min-width:150px;max-width:190px;font-size:13px}
+  th,td{padding:5px 6px}
+  .mobonly{display:inline-block}
+}
 </style>
 
 <div class="wrap" id="app">
@@ -680,7 +711,7 @@ function viewPL(){
       <button data-click="lvl:2" aria-pressed="${S.plLevel===2}">Düzey 2</button>
       <button data-click="lvl:3" aria-pressed="${S.plLevel===3}">Düzey 3</button>
     </div>
-    <button class="btn" data-click="copyPL">P&amp;L'i kopyala (Excel'e yapıştır)</button></div>
+    <button class="btn" data-click="copyPL">P&amp;L'i kopyala (Excel'e yapıştır)</button> <button class="btn mobonly" data-click="mmon">Aylık sütunlar</button></div>
     <div class="scroll"><table class="pl"><thead><tr><th>${CUR()}</th>${M3.map(m=>`<th class="n">${m}</th>`).join('')}<th class="n">Yıllık</th><th class="n">% gelir</th></tr></thead>
     <tbody>${plRows(tree,S.expanded,R)}</tbody></table></div>
     <p class="hint">Düzey 1: ana toplamlar. Düzey 2: grup toplamları. Düzey 3: tüm kalemler. Satırların yanındaki oklarla tek tek açabilirsiniz.</p></div>`;
@@ -921,6 +952,7 @@ document.addEventListener('click',e=>{
     case 'openDlg':openDlg('open');break;
     case 'dlgClose':closeDlg();break;
     case 'dlgSaveAs':{const k=document.querySelector('input[name=dlgKind]:checked'),nm=$('#dlgName').value;libSaveAs(nm,k?k.value:'case').then(ok=>{if(ok){closeDlg();toast('Kaydedildi: '+P().name);render();}});break;}
+    case 'mmon':document.body.classList.toggle('mshow');break;
     case 'loginDlg':e.preventDefault();openDlg('login');break;
     case 'doLogin':doLogin();break;
     case 'doSignup':doSignup();break;
@@ -1469,6 +1501,7 @@ const BTN={
  dlgSaveAs:['Kaydet (pencere)','Girilen adla kaydı oluşturur.'],dlgClose:['Kapat','Pencereyi kapatır.'],
  openEntry:['Kaydı aç','Seçilen kaydı yeni bir çalışma projesi olarak açar.'],delEntry:['Kaydı sil','Kütüphanedeki kaydı siler. İki kez tıklanması gerekir.'],
  dlFile:['Dosyaya indir','Aktif projeyi .json dosyası olarak indirir.'],upFile:['Dosyadan yükle','İndirdiğiniz .json proje dosyasını yeni proje olarak yükler.'],
+ mmon:['Aylık sütunlar','Telefonda P&L tablosunda aylık sütunları gösterir veya gizler. Gizliyken yalnız Yıllık ve % gelir görünür.'],
  loginDlg:['Giriş yap','Hesabınıza giriş yaparak kayıtlarınızı bulutta saklarsınız.'],doLogin:['Giriş yap','E-posta ve şifrenizle giriş yapar.'],doSignup:['Kayıt ol','Yeni hesap oluşturur. E-posta onayı istenebilir.'],doMagic:['E-posta bağlantısı gönder','Şifresiz giriş için e-postanıza tek kullanımlık bağlantı gönderir.'],doLogout:['Çıkış','Hesaptan çıkar. Hesabınızdaki kayıtlar silinmez.'],migrate:['Hesabıma aktar','Bu tarayıcıdaki kayıtları hesabınıza kopyalar.'],
  kil:['Kılavuz bölümü','Kılavuzun seçilen bölümünü açar.'],
  newProj:['Yeni proje','Şablon kalemlerle yeni bir proje açar. Mevcut proje korunur.'],
