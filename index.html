@@ -217,6 +217,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--accent)}
 .pbt tr.mut td{color:var(--muted)}
 .pbt td.wr{white-space:normal}
 @media (max-width:640px){.pbt td.wr{min-width:150px;font-size:12px}}
+.pft td input[type=text]{min-width:190px}.pft td{vertical-align:middle}
 </style>
 
 <div class="wrap" id="app">
@@ -808,10 +809,18 @@ function kvCalc(){
   cp.profile='uu';cp.soft=cpxMid(CX.s);cp.full=cpxMid(CX.f);
   const cx=cpxPlan(p);
   const pT=pclone(EXAMPLE_PROJ),goal=optSolveAll(pT,'noi',900000),goalA=goal.rows.find(x=>x.lv.id==='adr'),goalO=goal.rows.find(x=>x.lv.id==='occ'),goalAmt=(()=>{const q=pclone(pT);goalA.lv.ap(q,goalA.f);return {c0:compute(pT),c1:compute(q)};})();
+  const pfP=pclone(EXAMPLE_PROJ),pfx=pfCtx(pfP),pfI={cap:0,H:5,items:[
+    {name:'Oda soft goods yenileme',cost:180000,days:5,up:4,dur:6,grp:'A',must:false,by:3,rooms:true},
+    {name:'Oda tam renovasyon',cost:420000,days:21,up:10,dur:12,grp:'A',must:false,by:3,rooms:true},
+    {name:'Ortak alan, lobi, F&B',cost:90000,days:0,up:2,dur:10,grp:'',must:false,by:3,rooms:false},
+    {name:'MEP / yapısal',cost:120000,days:0,up:0,dur:10,grp:'',must:true,by:3,rooms:false}]};
+  const pfFree=pfSolve(pfI,pfx),pfMust=pfSolve(pfI,pfx,{mustOnly:true});
+  pfI.cap=500000;const pfC5=pfSolve(pfI,pfx);pfI.cap=400000;const pfC4=pfSolve(pfI,pfx);pfI.cap=0;
+  const pfFull=pfFlow(pfx,pfI.items[1],0);
   const pO=pclone(EXAMPLE_PROJ),opt1=optSens(pO,'noi',10,'group'),opt2=optSens(pO,'gop',10,'group'),RR0=sum(compute(pO).roomRev);
   cp.link=true;const pb3=run(),dcf3=dcfCalc(p);cp.link=false;
   const cpxRows=cx.rows.filter(r=>r.capex>0||r.t<1);
-  return {goal,goalA,goalO,goalAmt,opt1,opt2,RR0,p,c,AV,SO,RR,REV,L,staffTot:sum(c.staff),pb1,pb2,pb3,dcf1,dcf2,dcf3,sens,cx,cpxRows,
+  return {pfI,pfx,pfFree,pfMust,pfC5,pfC4,pfFull,goal,goalA,goalO,goalAmt,opt1,opt2,RR0,p,c,AV,SO,RR,REV,L,staffTot:sum(c.staff),pb1,pb2,pb3,dcf1,dcf2,dcf3,sens,cx,cpxRows,
     hz:{cap:c.avail[5],sold:c.sold[5],rev:c.roomRev[5],gn:c.gn[5],may:{cap:c.avail[4],sold:c.sold[4],rev:c.roomRev[4]}}};
 }
 const pp=v=>'%'+pct(v).slice(0,-1);
@@ -826,7 +835,7 @@ function tb(head,rows){
 }
 const KSEC=[
  ['basla','Başlarken',v=>`<p>Uygulama, doluluk ve ADR'den başlayarak P&amp;L, KPI, geri dönüş, DCF ve renovasyon hesaplarını tek yerde yapar. Sekmeler soldan sağa bir sırayı izler: önce girdiler, en sonda yatırım kararı.</p>`+
-  tb(['Sekme','Ne işe yarar','Ne zaman'],[['Girdiler','Oda sayısı, aylık doluluk, ADR ve kurlar','Her projeye önce buradan başlanır'],['Gelir-Gider','Gelir ve gider kalemleri ve hesaplama biçimleri','Maliyet yapısı kurulurken'],['P&amp;L','Gelirden GOP ve NOI\'ye giden tablo','Sonucu okurken'],['KPI','Doluluk, ADR, RevPAR, GOPPAR','Oteli başka otellerle kıyaslarken'],['Geri dönüş','Yatırımın kaç yılda geri döndüğü','Satın alma kararında'],['DCF','Otelin bugünkü değeri','Fiyat pazarlığında'],['Renovasyon','Yenileme bütçesi ve getiriye etkisi','Capex planlanırken'],['Optimizasyon','Duyarlılık (tornado) ve hedef arama','Neye odaklanacağınıza ve hedefin gerçekçi olup olmadığına karar verirken']])+
+  tb(['Sekme','Ne işe yarar','Ne zaman'],[['Girdiler','Oda sayısı, aylık doluluk, ADR ve kurlar','Her projeye önce buradan başlanır'],['Gelir-Gider','Gelir ve gider kalemleri ve hesaplama biçimleri','Maliyet yapısı kurulurken'],['P&amp;L','Gelirden GOP ve NOI\'ye giden tablo','Sonucu okurken'],['KPI','Doluluk, ADR, RevPAR, GOPPAR','Oteli başka otellerle kıyaslarken'],['Geri dönüş','Yatırımın kaç yılda geri döndüğü','Satın alma kararında'],['DCF','Otelin bugünkü değeri','Fiyat pazarlığında'],['Renovasyon','Yenileme bütçesi ve getiriye etkisi','Capex planlanırken'],['Optimizasyon','Duyarlılık (tornado), hedef arama ve capex portföyü','Neye odaklanacağınıza ve hedefin gerçekçi olup olmadığına karar verirken']])+
   `<h3>Örnek case</h3><p>Bu kılavuzdaki tüm sayılar tek bir örnekten gelir ve <b>bu sayfada uygulamanın kendi hesabıyla üretilir</b>: Bodrum'da 29 odalı bir butik otel. Rakamlar öğretici amaçlıdır. Aynı projeyi Aç menüsünden "Hazır örnekler" altında açıp kendiniz deneyebilirsiniz.</p>`+
   tb(['Girdi','Değer'],[['Oda sayısı','29, 12 ay açık'],['Doluluk','%65, tüm aylar'],['ADR','200 EUR (Haziran–Eylül), 125 EUR (diğer aylar)'],['Oda başına misafir','2'],['Ana para birimi ve kurlar','EUR. 1 USD = 49,57 TL, 1 EUR = 55,64 TL'],['Personel','3 kişi, kişi başı brüt 75.000 TL × 1,2375 = 92.812,50 TL/ay'],['F&amp;B','Markaya kiralama, 1.000.000 TL/ay kira geliri'],['Örnek için eklenenler','OTA komisyonu (oda gelirinin %15\'i), sigorta ve emlak vergisi (3.000 EUR/ay)'],['Satın alma fiyatı','8.000.000 EUR (geri dönüş ve DCF için)']])+
   `<p class="hint">Kurlar 20–21 Ekim 2026 değerleridir, elle girilir, canlı değildir.</p>`],
@@ -893,7 +902,7 @@ const KSEC=[
   tb(['Yıl','Capex','Kayıp','Artış','Net','Kümülatif'],v.cpxRows.map(r=>[r.t,nf.format(r.capex),nf.format(r.lost),nf.format(r.up),sf(r.net),sf(r.cum)]))+
   `<p>Bu otelde ADR artışı varsayımı (%6) yenileme maliyetini karşılamıyor. Getiriyi pozitife çevirmek için kapsamı soft goods'a düşürün ya da ADR artışını gerçekçi bir hedefe göre ayarlayın.</p>
   <h3>Diğer sekmelerle bağlantı</h3><p>Renovasyon sekmesindeki "Geri dönüş ve DCF sekmelerine ekle" kutusunu işaretlerseniz yenileme yatırımı, kaybı ve artışı iki sekmenin hesaplarına eklenir (Geri dönüş: yatırım ${nf.format(v.pb3.I0)} EUR; DCF: EV ${nf.format(v.dcf3.ev)} EUR).</p>`;}],
- ['optim','Optimizasyon: duyarlılık',v=>{const r=v.opt1,t=r.rows[0],g=v.opt2,M=OPT_METRICS.noi;return `<p>Optimizasyon sekmesi, hangi varsayımın sonucu en çok oynattığını gösterir. Her girdiyi tek tek %10 yukarı ve %10 aşağı çeker, geri kalanını sabit tutar, NOI veya seçtiğiniz ölçütün ne kadar değiştiğini ölçer. Sonuç bir tornado grafiğidir: en uzun çubuk en önemli kaldıraçtır. Sekmede dört modül planlıdır; şimdilik 1. modül (Duyarlılık) ve 2. modül (Hedef arama) açıktır.</p>
+ ['optim','Optimizasyon: duyarlılık',v=>{const r=v.opt1,t=r.rows[0],g=v.opt2,M=OPT_METRICS.noi;return `<p>Optimizasyon sekmesi, hangi varsayımın sonucu en çok oynattığını gösterir. Her girdiyi tek tek %10 yukarı ve %10 aşağı çeker, geri kalanını sabit tutar, NOI veya seçtiğiniz ölçütün ne kadar değiştiğini ölçer. Sonuç bir tornado grafiğidir: en uzun çubuk en önemli kaldıraçtır. Sekmede dört modül planlıdır; şimdilik 1. modül (Duyarlılık), 2. modül (Hedef arama) ve 3. modül (Capex portföyü) açıktır.</p>
   <h3>Nasıl okunur</h3><ol><li>Sonuç ölçütünü seçin: NOI, GOP, DCF işletme değeri veya geri dönüş süresi. DCF ve geri dönüş, kendi sekmelerindeki varsayımları kullanır.</li><li>Değişim adımını seçin (±%5 ile ±%25). Adım büyüdükçe çubuklar uzar, sıralama genelde aynı kalır.</li><li>Gider ayrıntısını seçin: "Grup bazında" kalemleri gruplar halinde, "Kalem bazında" her kalemi ayrı oynatır (örneğin OTA komisyonunu ayrı görmek için).</li><li>Çubuk renkleri girdinin yönünü gösterir: gri, girdi azalırsa; yeşil, girdi artarsa. Gelirde artış sonucu yükseltir, giderde artış düşürür; bu yüzden gider çubukları ters taraftadır.</li></ol>
   <h3>Örnek case: ${M.n} ±%10</h3><p>Baz NOI ${nf.format(Math.round(r.base))} EUR. En çok oynatan kaldıraçlar:</p>`+
   tb(['Kaldıraç','Girdi −%10','Girdi +%10','Esneklik'],r.rows.slice(0,6).map(x=>[x.lv.name,sf(x.lo),sf(x.hi),(x.el>=0?'+':'−')+Math.abs(x.el).toFixed(2).replace('.',',')]))+
@@ -907,6 +916,16 @@ const KSEC=[
   `<p>Yorum: ADR ${optFv(a.v0,a.lv.u)} → ${optFv(a.v1,a.lv.u)} (+%${(a.d*100).toFixed(1).replace('.',',')}) ya da doluluk ${optFv(o.v0,o.lv.u)} → ${optFv(o.v1,o.lv.u)} makul görünür. F&amp;B kirası, misafir sayısı ve pazarlama giderinde gereken değişim gerçekçi değildir. Tüm giderler ayrı ayrı sıfırlansa bile (personel, enerji, departman giderleri) tek başına hedefe yetmez: ${G.rows.filter(x=>!x.ok).length} kaldıraç "tek başına yetmez" çıkar.</p>
   <p><b>Doğrulama:</b> ADR ${optFv(a.v0,a.lv.u)} → ${optFv(a.v1,a.lv.u)} olunca toplam gelir ${nf.format(Math.round(sum(A.c0.rev)))} → ${nf.format(Math.round(sum(A.c1.rev)))} EUR (+${nf.format(Math.round(sum(A.c1.rev)-sum(A.c0.rev)))}). Bunun %81'i NOI'ye yansır (OTA komisyonu %15 ve FF&amp;E %4 düşülür): ${nf.format(Math.round(sum(A.c1.rev)-sum(A.c0.rev)))} × 0,81 = ${nf.format(Math.round((sum(A.c1.rev)-sum(A.c0.rev))*0.81))} EUR. ${nf.format(Math.round(G.base))} + ${nf.format(Math.round((sum(A.c1.rev)-sum(A.c0.rev))*0.81))} = ${nf.format(Math.round(sum(A.c1.noi)))} EUR, yani hedef.</p>
   <h3>Dikkat edilecekler</h3><ul><li>Her satır yalnız bir kaldıracı çevirir. Gerçek hayatta birkaçı birlikte oynar (biraz ADR, biraz gider); kombinasyonlar sonraki modüllerin işi.</li><li>ADR yükselince doluluk düşebilir; bu etki burada yoktur, 4. modül (fiyat-doluluk) ele alacak. ADR çözümü bu yüzden iyimser okunmalıdır.</li><li>Doluluk aylık olarak %100 ile sınırlıdır. Yıllık ortalama hedefi yüksekse, yüksek sezon ayları sınırı aşamadığı için gereken artış büyür.</li><li>Geri dönüş ölçütünde yatırım tutarı girilmiş olmalıdır; DCF ölçütü DCF sekmesindeki varsayımları kullanır.</li></ul>`;}],
+ ['capexpf','Optimizasyon: capex portföyü',v=>{const I=v.pfI.items,dec=r=>I.map((it,i)=>r.choice[i]>=0?it.name+' (yıl '+r.choice[i]+')':null).filter(Boolean).join(', ')||'–',F=v.pfFull,x=v.pfx,tr=x.roomRev0*x.frac*0.10*x.upFlow;
+ return `<p>Renovasyon sekmesi tek bir yenileme planını hesaplar. Bu modül daha çok kalem arasından <b>hangisinin, hangi yıl yapılacağını</b> seçer: soft goods mu tam renovasyon mu, ortak alan şimdi mi sonra mı, yıllık bütçe tavanı buna izin veriyor mu. Uygulama tüm seçim ve yıl kombinasyonlarını dener, tavanı aşanları eler ve net bugünkü değeri (NPV) en yüksek olanı bulur.</p>
+  <h3>Nasıl kullanılır</h3><ol><li>Optimizasyon sekmesinde "3 Capex portföyü"nü açın. Aday kalemler Renovasyon sekmesindeki referanslardan başlangıç değeri alır; her satırı kendi teklifinize göre değiştirin: maliyet, kapalı kalma günü, ADR artışı, etkinin kaç yıl sürdüğü.</li><li><b>Grup:</b> aynı harfli kalemlerden en fazla biri seçilir (soft goods ile tam renovasyon aynı odalar için alternatiftir). <b>Zorunlu:</b> işaretli kalem mutlaka yapılır, "en geç yıl" içinde zamanı aranır.</li><li>Yıllık capex tavanı ve planlama ufku girin. Tavan 0 ise sınırsızdır.</li><li>Sonuçta önerilen portföy, yıllara göre takvim, geri dönüş ve iki karşılaştırma görünür: "isteğe bağlı yatırımların ek değeri" (yalnız zorunlu işlerle kıyas) ve "bütçe tavanının maliyeti" (tavansız optimumla kıyas).</li></ol>
+  <h3>Örnek case: dört aday kalem</h3>`+
+  tb(['Kalem','Maliyet (EUR)','Kapalı gün','ADR artışı','Etki süresi','Grup'],I.map(it=>[it.name+(it.must?' (zorunlu, en geç yıl '+it.by+')':''),sf(it.cost),String(it.days),'%'+String(it.up).replace('.',','),it.dur+' yıl',it.grp||'–']))+
+  `<p class="hint">Bu tutarlar örnek içindir, referans değildir.</p>`+
+  tb(['Senaryo','Seçim','Toplam capex','NPV'],[['Yalnız zorunlu',dec(v.pfMust),sf(v.pfMust.capTotal),sf(v.pfMust.npv)],['Tavan yok',dec(v.pfFree),sf(v.pfFree.capTotal),sf(v.pfFree.npv)],['Yıllık tavan 500.000',dec(v.pfC5),sf(v.pfC5.capTotal),sf(v.pfC5.npv)],['Yıllık tavan 400.000',dec(v.pfC4),sf(v.pfC4.capTotal),sf(v.pfC4.npv)]])+
+  `<p><b>Yorum:</b> yalnız zorunlu MEP işi yapılırsa NPV ${sf(v.pfMust.npv)} EUR, yani yatırımın geri dönüşü yok. Tam renovasyon ve ortak alan eklenince NPV ${sf(v.pfFree.npv)} olur; isteğe bağlı yatırımlar ${sf(v.pfFree.npv-v.pfMust.npv)} EUR değer ekler. Tavan 500.000 olunca tam renovasyon (420.000) yine sığar, ortak alan bir yıl kayar ve NPV neredeyse aynı kalır. Tavan 400.000 olunca tam renovasyon hiçbir yıla sığmaz, uygulama onu eler ve NPV ${sf(v.pfC4.npv)} EUR'ya düşer: tavan ${sf(v.pfFree.npv-v.pfC4.npv)} EUR değer kaybettirir. Bu fark, "bütçeyi artırmaya değer mi?" sorusunun cevabıdır.</p>
+  <p><b>Doğrulama (tam renovasyon, yıl 0):</b> capex ${sf(I[1].cost)} EUR. Yıllık artan gelir = oda geliri ${nf.format(Math.round(x.roomRev0))} × %10 × %${Math.round(x.upFlow*100)} (NOI'ye yansıma) = ${nf.format(Math.round(tr))} EUR; motor yıl 1 için ${nf.format(Math.round(F.up[1]))} verir ve 12 yıl sürer. Kayıp gelir = ${nf.format(Math.round(x.rooms))} oda × ${I[1].days} gün × TRevPAR ${nf2.format(x.trevpar)} × %${Math.round(x.flow*100)} = ${nf.format(Math.round(F.lost[0]))} EUR. Kalemin NPV'si ${sf(F.npv)} EUR. Aynı kalem Renovasyon sekmesinin kendi hesabıyla (tekrarsız, aynı maliyet ve artışla) karşılaştırıldı, fark yalnızca maliyetin yuvarlanmasından ibaret, 1 EUR'dan az.</p>
+  <h3>Dikkat edilecekler</h3><ul><li>Etki süresi bitince artan gelir kesilir ve yenileme bu modülde yoktur; süre dışı dönem için son değer hesaplanmaz. Uzun etkili kalemler bu yüzden avantajlı çıkabilir, süreleri gerçekçi girin.</li><li>ADR artışı ve kapalı kalma günleri girdilerdir, tahmin değil. Sonuç bu rakamlara çok duyarlıdır; Duyarlılık ve Hedef arama modülleriyle aynı mantıkla sınayabilirsiniz.</li><li>Kalemler birbirinden bağımsız toplanır; aynı yılda üst üste binen kapalı kalma günleri ayrıca hesaba katılmaz.</li><li>Tavan, o yıl yapılacak capex'in enflasyonlu toplamıdır; kayıp gelir tavana dahil değildir.</li><li>En fazla 6 kalem girilebilir; bu sınırda arama saniyenin altında biter.</li></ul>`;}],
  ['kayit','Kaydet, Aç ve şablonlar',v=>`<p>Üst çubuktaki üç düğme çalışmalarınızı kalıcı biçimde saklar. Üzerinde çalıştığınız proje tarayıcıda otomatik tutulur; <b>Kaydet</b> ise onu adlandırılmış bir kayıt olarak kütüphaneye ekler.</p>
   <ul><li><b>Kaydet:</b> proje daha önce kaydedildiyse aynı kaydı günceller, ilk kez kaydediliyorsa Farklı kaydet penceresini açar. Yanındaki durum yazısı "Kaydedildi", "Kaydedilmemiş değişiklik" veya "Kütüphaneye kaydedilmedi" der.</li>
   <li><b>Farklı kaydet:</b> projeyi yeni bir adla kaydeder. Tür seçersiniz: <i>Case</i> üzerinde çalışmaya devam edeceğiniz kayıttır, Kaydet onu günceller. <i>Şablon</i> her açtığınızda yeni bir kopya verir ve kendisi değişmez.</li>
@@ -1045,9 +1064,9 @@ document.addEventListener('change',e=>{
 
 function optSub(){
   const m=S.optMod||1,b=(i,t,on)=>'<button data-optmod="'+i+'" class="'+(m===i?'on':'')+'" aria-pressed="'+(m===i)+'"'+(on?'':' disabled title="Sıradaki modül"')+'>'+t+'</button>';
-  return '<div class="osub" role="group" aria-label="Optimizasyon modülleri">'+b(1,'1 Duyarlılık',1)+b(2,'2 Hedef arama',1)+b(3,'3 Capex portföyü',0)+b(4,'4 Fiyat-doluluk',0)+'</div>';
+  return '<div class="osub" role="group" aria-label="Optimizasyon modülleri">'+b(1,'1 Duyarlılık',1)+b(2,'2 Hedef arama',1)+b(3,'3 Capex portföyü',1)+b(4,'4 Fiyat-doluluk',0)+'</div>';
 }
-function viewOptim(){return (S.optMod||1)===2?viewOpt2():viewOpt1();}
+function viewOptim(){const m=S.optMod||1;return m===3?viewOpt3():m===2?viewOpt2():viewOpt1();}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-optmod]');if(!b||b.disabled)return;S.optMod=+b.dataset.optmod;render();});
 
 /* ---------- Modül 2: Hedef arama. Bir sonuç için hedef değer girilir, her kaldıracın tek başına gereken değişimi bulunur ---------- */
@@ -1129,6 +1148,127 @@ document.addEventListener('input',e=>{
   const o=optOf();o.target=t.value;o.targetMetric=o.metric;
   const out=$('#opt-out2');if(out)out.innerHTML=optOut2();
 });
+
+/* ---------- Modül 3: Capex portföyü. Aday kalemler arasından, bütçe tavanı altında en yüksek net bugünkü değeri veren seçim ve yıl ---------- */
+const PF_MAX=6;
+function pfCtx(p){
+  const cb=Object.assign({},CPX_DEF,p.cpx||{}),c=compute(p);
+  const N=Math.max(2,Math.min(30,Math.round(pbN(cb.years))||15)),R=sum(c.rev),AV=sum(c.avail)||1;
+  return {cb,N,trevpar:R/AV,roomRev0:sum(c.roomRev),frac:Math.max(0,Math.min(100,pbN(cb.roomsPct)))/100,rooms:p.rooms,
+    ci:pbN(cb.capInfl)/100,gr:pbN(cb.gRev)/100,dr:pbN(cb.disc)/100,flow:pbN(cb.flow)/100,upFlow:pbN(cb.upFlow)/100};
+}
+function pfDefaults(p){
+  const b=Object.assign({},CPX_DEF,p.cpx||{}),frac=Math.max(0,Math.min(100,pbN(b.roomsPct)))/100,rooms=p.rooms*frac;
+  const upd=pbN(b.updF)||1,loc=pbN(b.local)||1;
+  const sK=pbN(b.soft)*rateOf(p,b.softCur)*upd*loc,fK=pbN(b.full)*rateOf(p,b.fullCur)*upd*loc,mK=pbN(b.mep)*rateOf(p,b.mepCur)*loc;
+  const frt=pbN(b.frt)/100,fe=pbN(b.fees)/100,ct=pbN(b.cont)/100;
+  const tot=hard=>{const fr=hard*frt,fee=(hard+fr)*fe,cn=(hard+fr+fee)*ct;return hard+fr+fee+cn;};
+  const R=v=>Math.round(v);
+  return {cap:0,H:5,items:[
+    {name:'Oda soft goods yenileme',cost:R(tot(rooms*sK)),days:pbN(b.daysSoft),up:R(pbN(b.adrUp)/2*10)/10,dur:Math.round(pbN(b.softCycle))||6,grp:'A',must:false,by:3,rooms:true},
+    {name:'Oda tam renovasyon',cost:R(tot(rooms*(sK+fK))),days:pbN(b.daysFull),up:pbN(b.adrUp),dur:Math.round(pbN(b.fullCycle))||12,grp:'A',must:false,by:3,rooms:true},
+    {name:'Ortak alan, lobi, F&B',cost:R(tot(rooms*(sK+fK)*pbN(b.pubPct)/100)),days:0,up:1.5,dur:10,grp:'',must:false,by:3,rooms:false},
+    {name:'MEP / yapısal (HVAC, tesisat, asansör)',cost:R(tot(mK*p.rooms)),days:0,up:0,dur:10,grp:'',must:true,by:3,rooms:false}]};
+}
+const pfView=p=>p.cpxPf||pfDefaults(p);
+const pfEdit=p=>{if(!p.cpxPf)p.cpxPf=pclone(pfDefaults(p));return p.cpxPf;};
+function pfFlow(cx,it,y){
+  const N=cx.N,cap=Array(N+1).fill(0),lost=Array(N+1).fill(0),up=Array(N+1).fill(0),net=Array(N+1).fill(0);
+  const gf=t=>Math.pow(1+cx.gr,Math.max(t-1,0)),sc=it.rooms?cx.frac:1;
+  cap[y]=pbN(it.cost)*Math.pow(1+cx.ci,y);
+  lost[y]=cx.rooms*sc*pbN(it.days)*cx.trevpar*cx.flow*gf(y);
+  const d=Math.max(1,Math.round(pbN(it.dur))||1);
+  for(let t=y+1;t<=Math.min(N,y+d);t++)up[t]=cx.roomRev0*sc*pbN(it.up)/100*cx.upFlow*gf(t);
+  let npv=0;for(let t=0;t<=N;t++){net[t]=up[t]-lost[t]-cap[t];npv+=net[t]/Math.pow(1+cx.dr,t);}
+  return {cap,lost,up,net,npv};
+}
+function pfSolve(pf,cx,o){
+  o=o||{};const items=pf.items,n=items.length,H=Math.min(cx.N-1,Math.max(0,Math.round(pbN(pf.H))));
+  const lim=o.noCap?0:pbN(pf.cap);
+  const fl=items.map(it=>{const a=[];for(let y=0;y<=H;y++)a.push(pfFlow(cx,it,y));return a;});
+  const used={},yr=Array(cx.N+1).fill(0),choice=Array(n).fill(-1);let best=null;
+  (function dfs(i,npv){
+    if(i===n){if(!best||npv>best.npv+1e-9)best={npv,choice:choice.slice()};return;}
+    const it=items[i],must=!!it.must,by=Math.min(H,Math.max(0,Math.round(pbN(it.by))));
+    if(!must){choice[i]=-1;dfs(i+1,npv);}
+    if(!must&&o.mustOnly)return;
+    if(it.grp&&used[it.grp])return;
+    for(let y=0;y<=(must?by:H);y++){
+      const f=fl[i][y];
+      if(lim>0&&yr[y]+f.cap[y]>lim+1e-6)continue;
+      yr[y]+=f.cap[y];if(it.grp)used[it.grp]=true;choice[i]=y;
+      dfs(i+1,npv+f.npv);
+      yr[y]-=f.cap[y];if(it.grp)used[it.grp]=false;choice[i]=-1;
+    }
+  })(0,0);
+  if(!best)return {infeasible:true};
+  const N=cx.N,tot={cap:Array(N+1).fill(0),lost:Array(N+1).fill(0),up:Array(N+1).fill(0),net:Array(N+1).fill(0)};
+  best.choice.forEach((y,i)=>{if(y>=0){const f=fl[i][y];['cap','lost','up','net'].forEach(k=>f[k].forEach((v,t)=>tot[k][t]+=v));}});
+  let cum=0,pay=null;const rows=[];
+  for(let t=0;t<=N;t++){const prev=cum;cum+=tot.net[t];if(pay===null&&t>0&&cum>=0&&tot.net[t]>0&&prev<0)pay=(t-1)+(-prev)/tot.net[t];rows.push({t,cap:tot.cap[t],lost:tot.lost[t],up:tot.up[t],net:tot.net[t],cum});}
+  return {npv:best.npv,choice:best.choice,fl,H,tot,rows,pay,capTotal:sum(tot.cap),N};
+}
+function pfOut(){
+  const p=P(),pf=pfView(p),cx=pfCtx(p),cu=CUR(),n=pf.items.length;
+  if(!n)return '<div class="panel"><p class="hint">Aday kalem yok. "+ Kalem" ile ekleyin.</p></div>';
+  const R=pfSolve(pf,cx);
+  if(R.infeasible)return '<div class="panel"><h2>Sonuç</h2><p class="hint">Bütçe tavanı altında zorunlu kalemler sığmıyor. Tavanı yükseltin, zorunlu kalemin "en geç yıl" değerini artırın veya maliyeti kontrol edin.</p></div>';
+  const base=pfSolve(pf,cx,{mustOnly:true}),free=pbN(pf.cap)>0?pfSolve(pf,cx,{noCap:true}):null;
+  const card=(a,v,e)=>'<div class="kpi"><small>'+a+'</small><b>'+v+'</b><em>'+e+'</em></div>';
+  const extra=base.infeasible?null:R.npv-base.npv;
+  const rowsI=pf.items.map((it,i)=>{const y=R.choice[i],f=y>=0?R.fl[i][y]:null;
+    return '<tr'+(y<0?' class="mut"':'')+'><td>'+esc(it.name)+(it.must?' <span class="ow">zorunlu</span>':'')+'</td><td>'+(y>=0?'Yıl '+y:'yapma')+'</td><td class="n">'+(f?fmt(-sum(f.cap)):'–')+'</td><td class="n">'+(f?fmt(-sum(f.lost)):'–')+'</td><td class="n">'+(f?fmt(sum(f.up)):'–')+'</td><td class="n">'+(f?fmt(f.npv):'–')+'</td></tr>';}).join('');
+  const lim=pbN(pf.cap);
+  const rowsY=R.rows.filter(r=>r.cap>0||r.up>0||r.lost>0).map(r=>{
+    const what=pf.items.filter((it,i)=>R.choice[i]===r.t).map(it=>esc(it.name)).join(', ');
+    return '<tr><td>Yıl '+r.t+'</td><td>'+(what||'<span class="mut">artan gelir</span>')+'</td><td class="n">'+fmt(-r.cap)+'</td><td class="n">'+(lim>0&&r.cap>0?pct(r.cap/lim,0):'–')+'</td><td class="n">'+fmt(-r.lost)+'</td><td class="n">'+fmt(r.up)+'</td><td class="n">'+fmt(r.net)+'</td><td class="n'+(r.cum<0?' neg':'')+'">'+fmt(r.cum)+'</td></tr>';}).join('');
+  return '<div class="kpis">'+
+    card('Optimum net bugünkü değer',fmt(R.npv),cu+', %'+pbN(cx.cb.disc)+' iskonto, '+R.N+' yıl')+
+    card('Toplam capex',fmt(R.capTotal),'enflasyonlu, seçilen yıllarda')+
+    card('Portföyün geri dönüşü',pbYr(R.pay,R.N),'kayıp gelir dahil')+
+    card('İsteğe bağlı yatırımların ek değeri',extra===null?'–':fmt(extra),'yalnız zorunlu işlerin NPV\'si: '+(base.infeasible?'–':fmt(base.npv)))+
+    (free?card('Bütçe tavanının maliyeti',fmt(free.npv-R.npv),'tavansız optimum '+fmt(free.npv)):card('Bütçe tavanı','yok','sınırsız')) +'</div>'+
+    '<div class="panel"><h2>Önerilen portföy</h2><div class="scroll"><table class="pbt otab"><thead><tr><th>Kalem</th><th>Karar</th><th class="n">Capex</th><th class="n">Kayıp gelir</th><th class="n">Artan gelir</th><th class="n">NPV katkısı</th></tr></thead><tbody>'+rowsI+'</tbody></table></div>'+
+    '<p class="hint">NPV katkısı: kalemin kendi nakit akışının bugünkü değeri (artan gelir − kayıp gelir − capex). Artan gelir yalnız etki süresi boyunca sürer, süre bitince yenileme bu modülde yoktur.</p></div>'+
+    '<div class="panel"><h2>Kümülatif net etki (bin '+cu+')</h2><div class="legend"><span><i style="background:var(--bad)"></i>Geri dönmemiş</span><span><i style="background:var(--good)"></i>Geri dönmüş</span></div>'+cpxChart({rows:R.rows})+'</div>'+
+    '<div class="panel"><h2>Yıllara göre takvim ('+cu+')</h2><div class="scroll"><table class="pbt"><thead><tr><th>Dönem</th><th>Yapılan</th><th class="n">Capex</th><th class="n">Tavan kullanımı</th><th class="n">Kayıp gelir</th><th class="n">Artan gelir</th><th class="n">Net</th><th class="n">Kümülatif</th></tr></thead><tbody>'+rowsY+'</tbody></table></div></div>';
+}
+function viewOpt3(){
+  const p=P(),pf=pfView(p),cu=CUR();
+  const inp=(i,k,v,t,w)=>'<input type="'+(t||'number')+'" step="any" inputmode="decimal" data-pf="'+i+':'+k+'" value="'+esc(v)+'" aria-label="'+k+'"'+(w?' style="width:'+w+'px"':'')+'>';
+  const rows=pf.items.map((it,i)=>'<tr><td>'+inp(i,'name',it.name,'text')+'</td><td class="n">'+inp(i,'cost',it.cost,'number',110)+'</td><td class="n">'+inp(i,'days',it.days,'number',64)+'</td><td class="n">'+inp(i,'up',it.up,'number',64)+'</td><td class="n">'+inp(i,'dur',it.dur,'number',64)+
+    '</td><td><select data-pfsel="'+i+':grp" aria-label="Seçim grubu">'+[['','–'],['A','A'],['B','B'],['C','C']].map(a=>'<option value="'+a[0]+'"'+((it.grp||'')===a[0]?' selected':'')+'>'+a[1]+'</option>').join('')+'</select></td>'+
+    '<td><label class="chk"><input type="checkbox" data-pfchk="'+i+':must"'+(it.must?' checked':'')+' aria-label="Zorunlu"></label></td><td class="n">'+inp(i,'by',it.by,'number',56)+'</td><td><button class="btn small danger" data-pfbtn="del:'+i+'" aria-label="Kalemi sil">Sil</button></td></tr>').join('');
+  return optSub()+'<div class="panel"><h2>Capex portföyü</h2>'+
+   '<details open><summary>Ne işe yarar</summary><p class="hint" style="margin-top:6px">Renovasyon kalemlerinin hangisinin, hangi yıl yapılacağını bulur. Her aday kalemin maliyeti, kapalı kalma günü, ADR artışı ve etkisinin sürdüğü yıl sayısı girilir. Uygulama tüm seçim ve yıl kombinasyonlarını dener, yıllık bütçe tavanını aşanları eler ve net bugünkü değeri (NPV) en yüksek olanı bulur. "Hepsini hemen yapalım mı, yoksa bütçeyi yıllara yayıp önceliği kime verelim?" sorusunu cevaplar. Aynı gruptaki kalemlerden (ör. soft goods ve tam renovasyon) en fazla biri seçilir. Zorunlu kalem mutlaka yapılır, yalnız zamanı aranır.</p></details>'+
+   '<div class="pbform" style="margin-top:12px"><div class="fld"><label for="pf-cap">Yıllık capex tavanı ('+cu+')</label><input id="pf-cap" type="number" step="any" inputmode="decimal" data-pf="g:cap" value="'+(pf.cap||0)+'"><small>0 girilirse sınırsız. Tavan, o yıl yapılacak capex toplamıdır (enflasyonlu).</small></div>'+
+   '<div class="fld"><label for="pf-H">Planlama ufku (yıl)</label><select id="pf-H" data-pfsel="g:H">'+[1,2,3,4,5,6,7,8].map(v=>'<option value="'+v+'"'+(+pf.H===v?' selected':'')+'>0 ile '+v+'. yıl</option>').join('')+'</select><small>Kalemler bu aralıkta bir yıla yerleştirilir.</small></div></div>'+
+   '<div class="scroll" style="margin-top:12px"><table class="pbt pft"><thead><tr><th>Kalem</th><th class="n">Maliyet ('+cu+')</th><th class="n">Kapalı gün</th><th class="n">ADR artışı %</th><th class="n">Etki süresi (yıl)</th><th>Grup</th><th>Zorunlu</th><th class="n">En geç yıl</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+   '<div class="tools" style="margin-top:10px"><span><button class="btn small" data-pfbtn="add"'+(pf.items.length>=PF_MAX?' disabled':'')+'>+ Kalem</button> <button class="btn small" data-pfbtn="reset">Renovasyon sekmesinden yeniden hesapla</button></span></div>'+
+   '<p class="hint">Başlangıç değerleri Renovasyon sekmesindeki maliyet referanslarından ve varsayımlardan gelir; iskonto oranı, enflasyon, gelir artışı ve yansıma oranları da oradan okunur. ADR artışı soft goods için tam renovasyonun yarısı, ortak alan için %1,5 varsayıldı (kaynaksız varsayım, kendi değerinizi girin). En fazla '+PF_MAX+' kalem.</p></div>'+
+   '<div id="opt-out3">'+pfOut()+'</div>';
+}
+(function(){
+  const refresh=()=>{const o=$('#opt-out3');if(o)o.innerHTML=pfOut();};
+  document.addEventListener('input',e=>{
+    const t=e.target,k=t.dataset&&t.dataset.pf;if(!k)return;
+    const pf=pfEdit(P()),[i,f]=k.split(':');
+    if(i==='g')pf[f]=t.value===''?0:t.value;else pf.items[+i][f]=f==='name'?t.value:(t.value===''?0:t.value);
+    save();refresh();
+  });
+  document.addEventListener('change',e=>{
+    const t=e.target,d=t.dataset||{};
+    if(d.pfsel){const pf=pfEdit(P()),[i,f]=d.pfsel.split(':');if(i==='g')pf[f]=+t.value;else pf.items[+i][f]=t.value;save();refresh();}
+    else if(d.pfchk){const pf=pfEdit(P()),[i,f]=d.pfchk.split(':');pf.items[+i][f]=t.checked;save();refresh();}
+  });
+  document.addEventListener('click',e=>{
+    const b=e.target.closest&&e.target.closest('[data-pfbtn]');if(!b)return;
+    const [a,i]=b.dataset.pfbtn.split(':'),p=P();
+    if(a==='reset'){p.cpxPf=pclone(pfDefaults(p));}
+    else{const pf=pfEdit(p);if(a==='del')pf.items.splice(+i,1);else if(a==='add'&&pf.items.length<PF_MAX)pf.items.push({name:'Yeni kalem',cost:0,days:0,up:0,dur:6,grp:'',must:false,by:3,rooms:true});}
+    save();render();
+  });
+})();
 function render(){
   renderTop();
   const v=$('#view');
