@@ -817,10 +817,13 @@ function kvCalc(){
   const pfFree=pfSolve(pfI,pfx),pfMust=pfSolve(pfI,pfx,{mustOnly:true});
   pfI.cap=500000;const pfC5=pfSolve(pfI,pfx);pfI.cap=400000;const pfC4=pfSolve(pfI,pfx);pfI.cap=0;
   const pfFull=pfFlow(pfx,pfI.items[1],0);
+  const pdP=pclone(EXAMPLE_PROJ),pdR=pdSolve(pdP,Object.assign({},PD_DEF)),pdS=[-0.6,-1,-1.5,-2,-3].map(e=>({e,r:pdSolve(pdP,Object.assign({},PD_DEF),e)}));
+  const pdVc=pdP.lines.reduce((a,l)=>a+(l.driver==='perGuest'?(GROUPS.find(g=>g.id===l.group).sec==='rev'?-1:1)*(+l.value||0)*lineRate(pdP,l):0),0)*pdP.guests;
+  const pdT=pdP.lines.filter(l=>l.driver==='pctRoomRev').reduce((a,l)=>a+(+l.value||0)/100,0)+pdP.ffe/100;
   const pO=pclone(EXAMPLE_PROJ),opt1=optSens(pO,'noi',10,'group'),opt2=optSens(pO,'gop',10,'group'),RR0=sum(compute(pO).roomRev);
   cp.link=true;const pb3=run(),dcf3=dcfCalc(p);cp.link=false;
   const cpxRows=cx.rows.filter(r=>r.capex>0||r.t<1);
-  return {pfI,pfx,pfFree,pfMust,pfC5,pfC4,pfFull,goal,goalA,goalO,goalAmt,opt1,opt2,RR0,p,c,AV,SO,RR,REV,L,staffTot:sum(c.staff),pb1,pb2,pb3,dcf1,dcf2,dcf3,sens,cx,cpxRows,
+  return {pdR,pdS,pdVc,pdT,pfI,pfx,pfFree,pfMust,pfC5,pfC4,pfFull,goal,goalA,goalO,goalAmt,opt1,opt2,RR0,p,c,AV,SO,RR,REV,L,staffTot:sum(c.staff),pb1,pb2,pb3,dcf1,dcf2,dcf3,sens,cx,cpxRows,
     hz:{cap:c.avail[5],sold:c.sold[5],rev:c.roomRev[5],gn:c.gn[5],may:{cap:c.avail[4],sold:c.sold[4],rev:c.roomRev[4]}}};
 }
 const pp=v=>'%'+pct(v).slice(0,-1);
@@ -835,7 +838,7 @@ function tb(head,rows){
 }
 const KSEC=[
  ['basla','Başlarken',v=>`<p>Uygulama, doluluk ve ADR'den başlayarak P&amp;L, KPI, geri dönüş, DCF ve renovasyon hesaplarını tek yerde yapar. Sekmeler soldan sağa bir sırayı izler: önce girdiler, en sonda yatırım kararı.</p>`+
-  tb(['Sekme','Ne işe yarar','Ne zaman'],[['Girdiler','Oda sayısı, aylık doluluk, ADR ve kurlar','Her projeye önce buradan başlanır'],['Gelir-Gider','Gelir ve gider kalemleri ve hesaplama biçimleri','Maliyet yapısı kurulurken'],['P&amp;L','Gelirden GOP ve NOI\'ye giden tablo','Sonucu okurken'],['KPI','Doluluk, ADR, RevPAR, GOPPAR','Oteli başka otellerle kıyaslarken'],['Geri dönüş','Yatırımın kaç yılda geri döndüğü','Satın alma kararında'],['DCF','Otelin bugünkü değeri','Fiyat pazarlığında'],['Renovasyon','Yenileme bütçesi ve getiriye etkisi','Capex planlanırken'],['Optimizasyon','Duyarlılık (tornado), hedef arama ve capex portföyü','Neye odaklanacağınıza ve hedefin gerçekçi olup olmadığına karar verirken']])+
+  tb(['Sekme','Ne işe yarar','Ne zaman'],[['Girdiler','Oda sayısı, aylık doluluk, ADR ve kurlar','Her projeye önce buradan başlanır'],['Gelir-Gider','Gelir ve gider kalemleri ve hesaplama biçimleri','Maliyet yapısı kurulurken'],['P&amp;L','Gelirden GOP ve NOI\'ye giden tablo','Sonucu okurken'],['KPI','Doluluk, ADR, RevPAR, GOPPAR','Oteli başka otellerle kıyaslarken'],['Geri dönüş','Yatırımın kaç yılda geri döndüğü','Satın alma kararında'],['DCF','Otelin bugünkü değeri','Fiyat pazarlığında'],['Renovasyon','Yenileme bütçesi ve getiriye etkisi','Capex planlanırken'],['Optimizasyon','Duyarlılık (tornado), hedef arama, capex portföyü ve fiyat-doluluk','Neye odaklanacağınıza ve hedefin gerçekçi olup olmadığına karar verirken']])+
   `<h3>Örnek case</h3><p>Bu kılavuzdaki tüm sayılar tek bir örnekten gelir ve <b>bu sayfada uygulamanın kendi hesabıyla üretilir</b>: Bodrum'da 29 odalı bir butik otel. Rakamlar öğretici amaçlıdır. Aynı projeyi Aç menüsünden "Hazır örnekler" altında açıp kendiniz deneyebilirsiniz.</p>`+
   tb(['Girdi','Değer'],[['Oda sayısı','29, 12 ay açık'],['Doluluk','%65, tüm aylar'],['ADR','200 EUR (Haziran–Eylül), 125 EUR (diğer aylar)'],['Oda başına misafir','2'],['Ana para birimi ve kurlar','EUR. 1 USD = 49,57 TL, 1 EUR = 55,64 TL'],['Personel','3 kişi, kişi başı brüt 75.000 TL × 1,2375 = 92.812,50 TL/ay'],['F&amp;B','Markaya kiralama, 1.000.000 TL/ay kira geliri'],['Örnek için eklenenler','OTA komisyonu (oda gelirinin %15\'i), sigorta ve emlak vergisi (3.000 EUR/ay)'],['Satın alma fiyatı','8.000.000 EUR (geri dönüş ve DCF için)']])+
   `<p class="hint">Kurlar 20–21 Ekim 2026 değerleridir, elle girilir, canlı değildir.</p>`],
@@ -902,20 +905,20 @@ const KSEC=[
   tb(['Yıl','Capex','Kayıp','Artış','Net','Kümülatif'],v.cpxRows.map(r=>[r.t,nf.format(r.capex),nf.format(r.lost),nf.format(r.up),sf(r.net),sf(r.cum)]))+
   `<p>Bu otelde ADR artışı varsayımı (%6) yenileme maliyetini karşılamıyor. Getiriyi pozitife çevirmek için kapsamı soft goods'a düşürün ya da ADR artışını gerçekçi bir hedefe göre ayarlayın.</p>
   <h3>Diğer sekmelerle bağlantı</h3><p>Renovasyon sekmesindeki "Geri dönüş ve DCF sekmelerine ekle" kutusunu işaretlerseniz yenileme yatırımı, kaybı ve artışı iki sekmenin hesaplarına eklenir (Geri dönüş: yatırım ${nf.format(v.pb3.I0)} EUR; DCF: EV ${nf.format(v.dcf3.ev)} EUR).</p>`;}],
- ['optim','Optimizasyon: duyarlılık',v=>{const r=v.opt1,t=r.rows[0],g=v.opt2,M=OPT_METRICS.noi;return `<p>Optimizasyon sekmesi, hangi varsayımın sonucu en çok oynattığını gösterir. Her girdiyi tek tek %10 yukarı ve %10 aşağı çeker, geri kalanını sabit tutar, NOI veya seçtiğiniz ölçütün ne kadar değiştiğini ölçer. Sonuç bir tornado grafiğidir: en uzun çubuk en önemli kaldıraçtır. Sekmede dört modül planlıdır; şimdilik 1. modül (Duyarlılık), 2. modül (Hedef arama) ve 3. modül (Capex portföyü) açıktır.</p>
+ ['optim','Optimizasyon: duyarlılık',v=>{const r=v.opt1,t=r.rows[0],g=v.opt2,M=OPT_METRICS.noi;return `<p>Optimizasyon sekmesi, hangi varsayımın sonucu en çok oynattığını gösterir. Her girdiyi tek tek %10 yukarı ve %10 aşağı çeker, geri kalanını sabit tutar, NOI veya seçtiğiniz ölçütün ne kadar değiştiğini ölçer. Sonuç bir tornado grafiğidir: en uzun çubuk en önemli kaldıraçtır. Sekmede dört modül vardır: Duyarlılık, Hedef arama, Capex portföyü ve Fiyat-doluluk.</p>
   <h3>Nasıl okunur</h3><ol><li>Sonuç ölçütünü seçin: NOI, GOP, DCF işletme değeri veya geri dönüş süresi. DCF ve geri dönüş, kendi sekmelerindeki varsayımları kullanır.</li><li>Değişim adımını seçin (±%5 ile ±%25). Adım büyüdükçe çubuklar uzar, sıralama genelde aynı kalır.</li><li>Gider ayrıntısını seçin: "Grup bazında" kalemleri gruplar halinde, "Kalem bazında" her kalemi ayrı oynatır (örneğin OTA komisyonunu ayrı görmek için).</li><li>Çubuk renkleri girdinin yönünü gösterir: gri, girdi azalırsa; yeşil, girdi artarsa. Gelirde artış sonucu yükseltir, giderde artış düşürür; bu yüzden gider çubukları ters taraftadır.</li></ol>
   <h3>Örnek case: ${M.n} ±%10</h3><p>Baz NOI ${nf.format(Math.round(r.base))} EUR. En çok oynatan kaldıraçlar:</p>`+
   tb(['Kaldıraç','Girdi −%10','Girdi +%10','Esneklik'],r.rows.slice(0,6).map(x=>[x.lv.name,sf(x.lo),sf(x.hi),(x.el>=0?'+':'−')+Math.abs(x.el).toFixed(2).replace('.',',')]))+
   `<p><b>Esneklik</b>, girdi %1 değişince sonucun yüzde kaç değiştiğidir. ADR'de ${(t.el).toFixed(2).replace('.',',')}: ADR %1 artarsa NOI yaklaşık %${(t.el).toFixed(2).replace('.',',')} artar. Eksi esneklik, girdi artınca sonuç düşer demektir (giderler).</p>
   <p><b>Doğrulama:</b> ADR'yi %10 artırınca oda geliri ${nf.format(Math.round(v.RR0))} EUR × %10 = ${nf.format(Math.round(v.RR0*0.1))} EUR artar. Bunun %15'i OTA komisyonuna, %4'ü FF&amp;E rezervine gider; kalan %81 NOI'ye yansır: ${nf.format(Math.round(v.RR0*0.1))} × 0,81 = ${nf.format(Math.round(v.RR0*0.081))} EUR. Tabloda ADR +%10 satırı ${sf(t.hi)} EUR, yani el hesabıyla aynı.</p>
-  <h3>Dikkat edilecekler</h3><ul><li>Doluluk göreli değişir: %65 doluluk %10 artınca %71,5 olur, %100'ü geçmez.</li><li>Tornado her kaldıracı tek başına oynatır. Gerçekte ADR yükselirse doluluk düşebilir; bu etkileşimi 4. modül (fiyat-doluluk) ele alacak.</li><li>Kur etkisi (TL giderlerin euro karşılığı) bu modülde yoktur; Girdiler sekmesinden kur değiştirerek bakabilirsiniz.</li><li>Sıralama bir öneri değildir: bir kaldıracın hassas olması, onu kolay değiştirebileceğiniz anlamına gelmez. Neye odaklanacağınızı seçerken ölçüt budur.</li></ul>`;}],
+  <h3>Dikkat edilecekler</h3><ul><li>Doluluk göreli değişir: %65 doluluk %10 artınca %71,5 olur, %100'ü geçmez.</li><li>Tornado her kaldıracı tek başına oynatır. Gerçekte ADR yükselirse doluluk düşebilir; bu etkileşimi 4. modül (fiyat-doluluk) ele alır.</li><li>Kur etkisi (TL giderlerin euro karşılığı) bu modülde yoktur; Girdiler sekmesinden kur değiştirerek bakabilirsiniz.</li><li>Sıralama bir öneri değildir: bir kaldıracın hassas olması, onu kolay değiştirebileceğiniz anlamına gelmez. Neye odaklanacağınızı seçerken ölçüt budur.</li></ul>`;}],
  ['hedef','Optimizasyon: hedef arama',v=>{const G=v.goal,a=v.goalA,o=v.goalO,A=v.goalAmt,M=OPT_METRICS.noi;return `<p>Duyarlılık "bu girdi oynarsa ne olur?" diye sorar. Hedef arama tersini sorar: <b>"NOI şu değer olsun, bunun için ne olmalı?"</b> Bir hedef değer girersiniz; uygulama her kaldıracı tek başına çevirip hedefe ulaşmak için gereken değeri bulur. Hedefin gerçekçi olup olmadığını görmenin en hızlı yoludur: yıllık NOI için ADR'de %17'lik artış makuldür, giderde %80'lik kesinti hayaldir.</p>
   <h3>Nasıl kullanılır</h3><ol><li>Optimizasyon sekmesinde "2 Hedef arama"yı seçin ve sonuç ölçütünü belirleyin (NOI, GOP, DCF değeri, geri dönüş). Başlangıç hedefi otomatik önerilir (şimdiki değerin %20 üstü, geri dönüşte %20 altı); kendi hedefinizi yazın.</li><li>Tabloda her kaldıraç için şimdiki ve gereken değer, değişim oranı ve durum görünür. Durum etiketi: <b>makul</b> ±%25 içinde, <b>zorlu</b> ±%50 içinde, <b>gerçekçi değil</b> daha fazlası. "Tek başına yetmez", kaldıraç tamamen sıfırlansa veya üçe katlansa bile hedefe ulaşılamadığı anlamına gelir; parantezde ulaşılabilen en iyi değer yazar.</li><li>"Seçilen çözüm" bölümünden bir kaldıraç seçin: çözümde gelir, GOP, NOI, doluluk ve ADR'nin nasıl değiştiğini görürsünüz. Çözüm projeye uygulanıp motor yeniden çalıştırılır ve hedefle karşılaştırılır (doğrulama satırı).</li></ol>
   <h3>Örnek case: NOI 900.000 EUR</h3><p>Şimdiki NOI ${nf.format(Math.round(G.base))} EUR, hedef 900.000 EUR (+%${((900000/G.base-1)*100).toFixed(1).replace('.',',')}). Tek başına ulaşan kaldıraçlar:</p>`+
   tb(['Kaldıraç','Şimdi','Gereken','Değişim'],G.rows.filter(x=>x.ok).map(x=>[x.lv.name,optFv(x.v0,x.lv.u),optFv(x.v1,x.lv.u),(x.d>=0?'+':'−')+'%'+Math.abs(x.d*100).toFixed(1).replace('.',',')]))+
   `<p>Yorum: ADR ${optFv(a.v0,a.lv.u)} → ${optFv(a.v1,a.lv.u)} (+%${(a.d*100).toFixed(1).replace('.',',')}) ya da doluluk ${optFv(o.v0,o.lv.u)} → ${optFv(o.v1,o.lv.u)} makul görünür. F&amp;B kirası, misafir sayısı ve pazarlama giderinde gereken değişim gerçekçi değildir. Tüm giderler ayrı ayrı sıfırlansa bile (personel, enerji, departman giderleri) tek başına hedefe yetmez: ${G.rows.filter(x=>!x.ok).length} kaldıraç "tek başına yetmez" çıkar.</p>
   <p><b>Doğrulama:</b> ADR ${optFv(a.v0,a.lv.u)} → ${optFv(a.v1,a.lv.u)} olunca toplam gelir ${nf.format(Math.round(sum(A.c0.rev)))} → ${nf.format(Math.round(sum(A.c1.rev)))} EUR (+${nf.format(Math.round(sum(A.c1.rev)-sum(A.c0.rev)))}). Bunun %81'i NOI'ye yansır (OTA komisyonu %15 ve FF&amp;E %4 düşülür): ${nf.format(Math.round(sum(A.c1.rev)-sum(A.c0.rev)))} × 0,81 = ${nf.format(Math.round((sum(A.c1.rev)-sum(A.c0.rev))*0.81))} EUR. ${nf.format(Math.round(G.base))} + ${nf.format(Math.round((sum(A.c1.rev)-sum(A.c0.rev))*0.81))} = ${nf.format(Math.round(sum(A.c1.noi)))} EUR, yani hedef.</p>
-  <h3>Dikkat edilecekler</h3><ul><li>Her satır yalnız bir kaldıracı çevirir. Gerçek hayatta birkaçı birlikte oynar (biraz ADR, biraz gider); kombinasyonlar sonraki modüllerin işi.</li><li>ADR yükselince doluluk düşebilir; bu etki burada yoktur, 4. modül (fiyat-doluluk) ele alacak. ADR çözümü bu yüzden iyimser okunmalıdır.</li><li>Doluluk aylık olarak %100 ile sınırlıdır. Yıllık ortalama hedefi yüksekse, yüksek sezon ayları sınırı aşamadığı için gereken artış büyür.</li><li>Geri dönüş ölçütünde yatırım tutarı girilmiş olmalıdır; DCF ölçütü DCF sekmesindeki varsayımları kullanır.</li></ul>`;}],
+  <h3>Dikkat edilecekler</h3><ul><li>Her satır yalnız bir kaldıracı çevirir. Gerçek hayatta birkaçı birlikte oynar (biraz ADR, biraz gider); kombinasyonlar için Capex portföyü ve Fiyat-doluluk modüllerine bakın.</li><li>ADR yükselince doluluk düşebilir; bu etki burada yoktur, 4. modül (fiyat-doluluk) ele alır. ADR çözümü bu yüzden iyimser okunmalıdır.</li><li>Doluluk aylık olarak %100 ile sınırlıdır. Yıllık ortalama hedefi yüksekse, yüksek sezon ayları sınırı aşamadığı için gereken artış büyür.</li><li>Geri dönüş ölçütünde yatırım tutarı girilmiş olmalıdır; DCF ölçütü DCF sekmesindeki varsayımları kullanır.</li></ul>`;}],
  ['capexpf','Optimizasyon: capex portföyü',v=>{const I=v.pfI.items,dec=r=>I.map((it,i)=>r.choice[i]>=0?it.name+' (yıl '+r.choice[i]+')':null).filter(Boolean).join(', ')||'–',F=v.pfFull,x=v.pfx,tr=x.roomRev0*x.frac*0.10*x.upFlow;
  return `<p>Renovasyon sekmesi tek bir yenileme planını hesaplar. Bu modül daha çok kalem arasından <b>hangisinin, hangi yıl yapılacağını</b> seçer: soft goods mu tam renovasyon mu, ortak alan şimdi mi sonra mı, yıllık bütçe tavanı buna izin veriyor mu. Uygulama tüm seçim ve yıl kombinasyonlarını dener, tavanı aşanları eler ve net bugünkü değeri (NPV) en yüksek olanı bulur.</p>
   <h3>Nasıl kullanılır</h3><ol><li>Optimizasyon sekmesinde "3 Capex portföyü"nü açın. Aday kalemler Renovasyon sekmesindeki referanslardan başlangıç değeri alır; her satırı kendi teklifinize göre değiştirin: maliyet, kapalı kalma günü, ADR artışı, etkinin kaç yıl sürdüğü.</li><li><b>Grup:</b> aynı harfli kalemlerden en fazla biri seçilir (soft goods ile tam renovasyon aynı odalar için alternatiftir). <b>Zorunlu:</b> işaretli kalem mutlaka yapılır, "en geç yıl" içinde zamanı aranır.</li><li>Yıllık capex tavanı ve planlama ufku girin. Tavan 0 ise sınırsızdır.</li><li>Sonuçta önerilen portföy, yıllara göre takvim, geri dönüş ve iki karşılaştırma görünür: "isteğe bağlı yatırımların ek değeri" (yalnız zorunlu işlerle kıyas) ve "bütçe tavanının maliyeti" (tavansız optimumla kıyas).</li></ol>
@@ -926,6 +929,17 @@ const KSEC=[
   `<p><b>Yorum:</b> yalnız zorunlu MEP işi yapılırsa NPV ${sf(v.pfMust.npv)} EUR, yani yatırımın geri dönüşü yok. Tam renovasyon ve ortak alan eklenince NPV ${sf(v.pfFree.npv)} olur; isteğe bağlı yatırımlar ${sf(v.pfFree.npv-v.pfMust.npv)} EUR değer ekler. Tavan 500.000 olunca tam renovasyon (420.000) yine sığar, ortak alan bir yıl kayar ve NPV neredeyse aynı kalır. Tavan 400.000 olunca tam renovasyon hiçbir yıla sığmaz, uygulama onu eler ve NPV ${sf(v.pfC4.npv)} EUR'ya düşer: tavan ${sf(v.pfFree.npv-v.pfC4.npv)} EUR değer kaybettirir. Bu fark, "bütçeyi artırmaya değer mi?" sorusunun cevabıdır.</p>
   <p><b>Doğrulama (tam renovasyon, yıl 0):</b> capex ${sf(I[1].cost)} EUR. Yıllık artan gelir = oda geliri ${nf.format(Math.round(x.roomRev0))} × %10 × %${Math.round(x.upFlow*100)} (NOI'ye yansıma) = ${nf.format(Math.round(tr))} EUR; motor yıl 1 için ${nf.format(Math.round(F.up[1]))} verir ve 12 yıl sürer. Kayıp gelir = ${nf.format(Math.round(x.rooms))} oda × ${I[1].days} gün × TRevPAR ${nf2.format(x.trevpar)} × %${Math.round(x.flow*100)} = ${nf.format(Math.round(F.lost[0]))} EUR. Kalemin NPV'si ${sf(F.npv)} EUR. Aynı kalem Renovasyon sekmesinin kendi hesabıyla (tekrarsız, aynı maliyet ve artışla) karşılaştırıldı, fark yalnızca maliyetin yuvarlanmasından ibaret, 1 EUR'dan az.</p>
   <h3>Dikkat edilecekler</h3><ul><li>Etki süresi bitince artan gelir kesilir ve yenileme bu modülde yoktur; süre dışı dönem için son değer hesaplanmaz. Uzun etkili kalemler bu yüzden avantajlı çıkabilir, süreleri gerçekçi girin.</li><li>ADR artışı ve kapalı kalma günleri girdilerdir, tahmin değil. Sonuç bu rakamlara çok duyarlıdır; Duyarlılık ve Hedef arama modülleriyle aynı mantıkla sınayabilirsiniz.</li><li>Kalemler birbirinden bağımsız toplanır; aynı yılda üst üste binen kapalı kalma günleri ayrıca hesaba katılmaz.</li><li>Tavan, o yıl yapılacak capex'in enflasyonlu toplamıdır; kayıp gelir tavana dahil değildir.</li><li>En fazla 6 kalem girilebilir; bu sınırda arama saniyenin altında biter.</li></ul>`;}],
+ ['fiyatdoluluk','Optimizasyon: fiyat-doluluk',v=>{const R=v.pdR,mj=R.mons[0],mh=R.mons[5],mc=v.pdVc/(1-v.pdT),e=PD_DEF.eps,pstar=mc*e/(1+e),sg=m=>(m>=0?'+':'−')+'%'+Math.abs(m*100).toFixed(1).replace('.',',');
+ return `<p>Önceki modüller bir girdiyi tek başına oynatır. Gerçekte fiyat yükselince doluluk düşer, fiyat düşünce artar. Bu modül o ilişkiyi <b>fiyat esnekliği</b> (ε) ile kurar ve her ay için en yüksek NOI'yi (veya GOP, gelir) veren fiyatı ve beklenen doluluğu arar.</p>
+  <h3>Model</h3><p><b>Beklenen doluluk = mevcut doluluk × (yeni ADR ÷ mevcut ADR)<sup>ε</sup></b>, en çok %100. ε negatiftir: ε = −1,2 ise fiyat %10 artınca doluluk yaklaşık %11 düşer. Fiyat değiştikçe tüm gelir ve gider kalemleri motorun kendi hesabıyla yeniden çıkar (satılan oda başına gider, OTA komisyonu, FF&amp;E dahil). Aylar birbirinden bağımsızdır, bu yüzden her ay ayrı ayrı aranır.</p>
+  <h3>Nasıl kullanılır</h3><ol><li>Hedefi seçin: NOI, GOP veya toplam gelir. Kâr ve gelir en yüksek fiyatları farklıdır: değişken maliyet (misafir başına gider, OTA) olduğu için kâr, gelirden daha yüksek fiyatı tercih eder.</li><li>Esnekliği yazın. Başlangıç −1,2 kaynaksız bir varsayımdır. Kendi geçmişinizden tahmin edin: iki dönemde fiyat %X, doluluk %Y değiştiyse ε ≈ %Y ÷ %X. Yüksek sezonda talep genelde daha az esnektir; "aylara göre farklı esneklik" bölümünden ay ay girebilirsiniz.</li><li>Fiyat sınırını seçin (±%10 ile ±%40) ve isterseniz doluluk tabanı koyun.</li><li>Tablo her ay için önerilen ADR'yi, beklenen doluluğu ve sonuçtaki değişimi verir. "Sınırda" etiketi, en iyi fiyatın aranan aralığın ucunda olduğunu gösterir: sınır genişletilirse sonuç daha da değişir. Fiyat eğrisi seçilen ayın sonucunu fiyata göre çizer.</li><li>Esnekliğe duyarlılık tablosu, varsayımınızın sonucu ne kadar oynattığını gösterir. Bu tablo yanlış bir ε'un maliyetini ölçmenin yoludur.</li></ol>
+  <h3>Örnek case: NOI, ε = −1,2, ±%25</h3>`+
+  tb(['Ay','ADR şimdi','ADR önerilen','Doluluk şimdi','Doluluk beklenen','Fiyat','Δ NOI'],[mj,mh].map(m=>[MONTHS[m.i],nf2.format(m.adr0),nf2.format(m.adr),nf2.format(m.occ0)+' %',nf2.format(m.occ)+' %',sg(m.m-1),sf(m.v-m.v0)+(m.edge?' ('+m.edge+' sınırda)':'')]))+
+  `<p>Yıllık NOI ${sf(R.total)} EUR (şimdi ${sf(R.total0)}), artış ${sf(R.total-R.total0)} EUR. Düşük sezon ayları üst sınıra (+%25) dayanır: bu aylarda en iyi fiyat (aşağıdaki kapalı formüle göre yaklaşık ${nf.format(pstar)} EUR) mevcut ${nf.format(mj.adr0)} EUR'nun çok üstündedir, arama aralığın ucunda durur. Yaz aylarında en iyi fiyat zaten mevcut fiyata yakındır (${nf2.format(mh.adr)} EUR). Eğri tepe çevresinde düzdür: fiyatı en iyi değerden biraz saptırmak çok az kaybettirir.</p>
+  <p><b>Doğrulama:</b> sabit esneklikli talepte en iyi fiyat kapalı bir formülle bulunur: <b>fiyat* = marjinal maliyet × ε ÷ (1 + ε)</b>. Satılan oda başına değişken gider ${nf2.format(v.pdVc)} EUR (misafir başına giderlerin toplamı × oda başına misafir). Gelirden OTA %${Math.round((v.pdT-0.04)*100)} ve FF&amp;E %4 düşülür; marjinal maliyet = ${nf2.format(v.pdVc)} ÷ ${nf2.format(1-v.pdT)} = ${nf2.format(mc)} EUR. Fiyat* = ${nf2.format(mc)} × (−1,2) ÷ (−0,2) = <b>${nf2.format(pstar)} EUR</b>. Uygulama Haziran için ${nf2.format(mh.adr)} EUR buldu (%1'lik adımlarla arar, ${nf2.format(mh.adr0)} × 1,04). Formül ve arama aynı yere çıkar.</p>
+  <h3>Esnekliğe duyarlılık</h3>`+tb(['ε','NOI artışı','Sınırdaki ay'],v.pdS.map(x=>[String(x.e).replace('.',','),sf(x.r.total-x.r.total0),String(x.r.mons.filter(m=>m.edge).length)]))+
+  `<p>Esneklik −1'e yakınken fiyat artışı doluluğu az düşürür, kâr artar. Çok esnek talepte (örn. −3) uygulama fiyat indirmeyi önerir; bu, indirimin oteli doldurup kapasite sınırına çıkardığı durumdur. Esnekliğin hangi değerde olduğu bilinmiyorsa büyük bir fiyat hamlesi yapmadan önce küçük adımla deneyip doluluk tepkisini ölçmek, esnekliği veriyle öğrenmenin yoludur.</p>
+  <h3>Dikkat edilecekler</h3><ul><li>Sabit esneklik dar bir fiyat aralığında (±%25 gibi) makuldür. Çok geniş bir aralıkta tahmin güvenilmez.</li><li>Doluluk zaten %100'e yakın bir ayda gerçek talep bilinmez; model gözlenen doluluğu talep sayar, bu yüzden fiyat artışının getirisini olduğundan düşük gösterebilir.</li><li>Rakip tepkisi, kanal karması, minimum konaklama gibi kurallar ve sezon geçişleri modelde yoktur.</li><li>Sonuç öneridir, otomatik fiyat değildir. Kâr eğrisi düzse, fiyatı yuvarlak bir değere çekmek maliyetsizdir.</li><li>Bu modül ADR ve dolulukları değiştirmez; Girdiler sekmesindeki değerler aynı kalır. Önerileri uygulamak isterseniz Girdiler sekmesine kendiniz girin.</li></ul>`;}],
  ['kayit','Kaydet, Aç ve şablonlar',v=>`<p>Üst çubuktaki üç düğme çalışmalarınızı kalıcı biçimde saklar. Üzerinde çalıştığınız proje tarayıcıda otomatik tutulur; <b>Kaydet</b> ise onu adlandırılmış bir kayıt olarak kütüphaneye ekler.</p>
   <ul><li><b>Kaydet:</b> proje daha önce kaydedildiyse aynı kaydı günceller, ilk kez kaydediliyorsa Farklı kaydet penceresini açar. Yanındaki durum yazısı "Kaydedildi", "Kaydedilmemiş değişiklik" veya "Kütüphaneye kaydedilmedi" der.</li>
   <li><b>Farklı kaydet:</b> projeyi yeni bir adla kaydeder. Tür seçersiniz: <i>Case</i> üzerinde çalışmaya devam edeceğiniz kayıttır, Kaydet onu günceller. <i>Şablon</i> her açtığınızda yeni bir kopya verir ve kendisi değişmez.</li>
@@ -1064,9 +1078,9 @@ document.addEventListener('change',e=>{
 
 function optSub(){
   const m=S.optMod||1,b=(i,t,on)=>'<button data-optmod="'+i+'" class="'+(m===i?'on':'')+'" aria-pressed="'+(m===i)+'"'+(on?'':' disabled title="Sıradaki modül"')+'>'+t+'</button>';
-  return '<div class="osub" role="group" aria-label="Optimizasyon modülleri">'+b(1,'1 Duyarlılık',1)+b(2,'2 Hedef arama',1)+b(3,'3 Capex portföyü',1)+b(4,'4 Fiyat-doluluk',0)+'</div>';
+  return '<div class="osub" role="group" aria-label="Optimizasyon modülleri">'+b(1,'1 Duyarlılık',1)+b(2,'2 Hedef arama',1)+b(3,'3 Capex portföyü',1)+b(4,'4 Fiyat-doluluk',1)+'</div>';
 }
-function viewOptim(){const m=S.optMod||1;return m===3?viewOpt3():m===2?viewOpt2():viewOpt1();}
+function viewOptim(){const m=S.optMod||1;return m===4?viewOpt4():m===3?viewOpt3():m===2?viewOpt2():viewOpt1();}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-optmod]');if(!b||b.disabled)return;S.optMod=+b.dataset.optmod;render();});
 
 /* ---------- Modül 2: Hedef arama. Bir sonuç için hedef değer girilir, her kaldıracın tek başına gereken değişimi bulunur ---------- */
@@ -1267,6 +1281,98 @@ function viewOpt3(){
     if(a==='reset'){p.cpxPf=pclone(pfDefaults(p));}
     else{const pf=pfEdit(p);if(a==='del')pf.items.splice(+i,1);else if(a==='add'&&pf.items.length<PF_MAX)pf.items.push({name:'Yeni kalem',cost:0,days:0,up:0,dur:6,grp:'',must:false,by:3,rooms:true});}
     save();render();
+  });
+})();
+
+/* ---------- Modül 4: Fiyat-doluluk. Sabit esneklikli talep: doluluk = doluluk0 × (fiyat / fiyat0)^ε, %100 ile sınırlı. Ay ay en iyi fiyat aranır ---------- */
+const PD_DEF={eps:-1.2,bound:25,minOcc:0,obj:'noi',mon:[]};
+const PD_OBJ={noi:{n:'NOI (FF&E sonrası)',get:c=>c.noi},gop:{n:'GOP',get:c=>c.gop},rev:{n:'Toplam gelir',get:c=>c.rev}};
+const pdView=p=>Object.assign({},PD_DEF,p.pd||{});
+const pdEdit=p=>{if(!p.pd)p.pd=pclone(PD_DEF);return p.pd;};
+function pdEps(pd,i,ov){if(ov!=null)return ov;const m=pd.mon&&pd.mon[i];return pbN((m===undefined||m===null||m==='')?pd.eps:m);}
+function pdSolve(p,pd,ov){
+  for(let i=0;i<12;i++)if(pdEps(pd,i,ov)>=0)return {err:'Esneklik negatif olmalı (fiyat artınca doluluk düşer), örn. −1,2.'};
+  const B=Math.max(1,Math.min(60,Math.round(pbN(pd.bound))||25)),O=PD_OBJ[pd.obj]||PD_OBJ.noi,minO=pbN(pd.minOcc);
+  const grid=[];
+  for(let k=-B;k<=B;k++){
+    const m=1+k/100,q=pclone(p);q.adr=p.adr.map(a=>a*m);q.occ=p.occ.map((o,i)=>Math.min(100,o*Math.pow(m,pdEps(pd,i,ov))));
+    grid.push({m,adr:q.adr,occ:q.occ,v:O.get(compute(q)).slice()});
+  }
+  const base=grid[B],mons=[];
+  for(let i=0;i<12;i++){
+    let best=B;
+    for(let j=0;j<grid.length;j++){if(grid[j].occ[i]<minO-1e-9)continue;if(grid[j].v[i]>grid[best].v[i]+1e-9)best=j;}
+    const g=grid[best];
+    mons.push({i,m:g.m,adr:g.adr[i],occ:g.occ[i],v:g.v[i],adr0:p.adr[i],occ0:p.occ[i],v0:base.v[i],edge:best===0?'alt':best===grid.length-1?'üst':'',curve:grid.map(x=>x.v[i]),xs:grid.map(x=>x.adr[i]),best});
+  }
+  const q=pclone(p);q.adr=mons.map(m=>m.adr);q.occ=mons.map(m=>m.occ);
+  const c0=compute(p),c1=compute(q);
+  return {mons,total0:sum(mons.map(m=>m.v0)),total:sum(mons.map(m=>m.v)),c0,c1,q,B,obj:pd.obj,O};
+}
+function pdCurve(m,cu){
+  const W=720,H=210,l=56,r=10,t=14,bt=30,xs=m.xs,ys=m.curve;
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),sp=(y1-y0)||1;
+  const X=v=>l+(v-x0)/((x1-x0)||1)*(W-l-r),Y=v=>t+(y1-v)/sp*(H-t-bt);
+  let s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Fiyata göre aylık sonuç">';
+  for(let k=0;k<=3;k++){const v=y0+sp*k/3,y=Y(v);s+='<line class="grid" x1="'+l+'" x2="'+(W-r)+'" y1="'+y+'" y2="'+y+'"/><text x="'+(l-6)+'" y="'+(y+3)+'" text-anchor="end">'+nf.format(v/1000)+'</text>';}
+  s+='<polyline fill="none" stroke="var(--accent)" stroke-width="2" points="'+xs.map((x,i)=>X(x).toFixed(1)+','+Y(ys[i]).toFixed(1)).join(' ')+'"/>';
+  const mk=(x,y,lab,c,dy)=>'<circle cx="'+X(x)+'" cy="'+Y(y)+'" r="4.5" fill="'+c+'"/><text x="'+(X(x)>W-60?X(x)+4:X(x))+'" y="'+(Y(y)+dy+(Y(y)<t+12&&dy<0?26:0))+'" text-anchor="'+(X(x)>W-60?'end':'middle')+'">'+lab+'</text>';
+  s+=mk(m.adr0,m.v0,'şimdi','var(--muted)',16);
+  if(Math.abs(m.adr-m.adr0)>1e-6)s+=mk(m.adr,m.v,'önerilen','var(--good)',-9);
+  for(const k of [0,.5,1]){const x=x0+(x1-x0)*k;s+='<text x="'+X(x)+'" y="'+(H-8)+'" text-anchor="'+(k===0?'start':k===1?'end':'middle')+'">'+nf2.format(x)+'</text>';}
+  return s+'</svg>';
+}
+function pdOut(){
+  const p=P(),pd=pdView(p),o=optOf(),cu=CUR();
+  const R=pdSolve(p,pd);
+  if(R.err)return '<div class="panel"><h2>Sonuç</h2><p class="hint">'+R.err+'</p></div>';
+  const M=R.O.n,mi=Math.max(0,Math.min(11,+o.pdMonth||0)),mo=R.mons[mi];
+  const sold=c=>sum(c.sold),occ=c=>sum(c.sold)/(sum(c.avail)||1),adr=c=>sum(c.roomRev)/(sum(c.sold)||1);
+  const gain=R.total-R.total0,rel=R.total0?gain/Math.abs(R.total0):0,edge=R.mons.filter(m=>m.edge).length;
+  const card=(a,v,e)=>'<div class="kpi"><small>'+a+'</small><b>'+v+'</b><em>'+e+'</em></div>';
+  const sg=v=>(v>=0?'+':'−')+'%'+Math.abs(v).toFixed(1).replace('.',',');
+  const rows=R.mons.map(m=>'<tr><td>'+MONTHS[m.i]+'</td><td class="n mh">'+nf2.format(m.adr0)+'</td><td class="n mh">'+nf2.format(m.occ0)+'</td><td class="n">'+nf2.format(m.adr)+'</td><td class="n">'+nf2.format(m.occ)+'</td><td class="n">'+sg((m.m-1)*100)+'</td><td class="n">'+optS(m.v-m.v0)+'</td><td class="mh">'+(m.edge?'<span class="ow">'+m.edge+' sınırda</span>':'')+'</td></tr>').join('');
+  const sens=[-0.6,-1,-1.5,-2,-3].map(e=>{const r=pdSolve(p,pd,e);const ms=r.mons.reduce((a,m)=>a+(m.m-1),0)/12;return '<tr><td>'+String(e).replace('.',',')+'</td><td class="n">'+optS(r.total-r.total0)+'</td><td class="n">'+sg(ms*100)+'</td><td class="n">'+r.mons.filter(m=>m.edge).length+'</td></tr>';}).join('');
+  return '<div class="kpis">'+
+    card('Yıllık '+M+' artışı',optS(gain),sg(rel*100)+', şimdi '+fmt(R.total0))+
+    card('Ortalama ADR',nf2.format(adr(R.c0))+' → '+nf2.format(adr(R.c1)),cu+', satılan odaya göre')+
+    card('Doluluk',pct(occ(R.c0))+' → '+pct(occ(R.c1)),'yıllık ortalama')+
+    card('Satılan oda',nf.format(sold(R.c0))+' → '+nf.format(sold(R.c1)),'yıllık')+
+    card('Fiyat sınırına dayanan ay',String(edge),'sınır genişletilirse sonuç daha da değişir')+'</div>'+
+    '<div class="panel"><h2>Aylık en iyi fiyat ('+cu+')</h2><div class="scroll"><table class="pbt otab"><thead><tr><th>Ay</th><th class="n mh">ADR şimdi</th><th class="n mh">Doluluk % şimdi</th><th class="n">ADR önerilen</th><th class="n">Doluluk % beklenen</th><th class="n">Fiyat</th><th class="n">Δ '+esc(M)+'</th><th class="mh"></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<p class="hint">Her ay bağımsız aranır: aylık sonuç yalnız o ayın fiyatına ve dolulumuna bağlıdır. Beklenen doluluk = mevcut doluluk × (yeni ADR ÷ mevcut ADR)<sup>esneklik</sup>, en çok %100. Doğrulama: seçilen fiyatlar projeye uygulanıp motor yeniden çalıştırıldı, yıllık '+esc(M)+' '+fmt(sum(R.O.get(R.c1)))+' çıktı, aylıkların toplamı '+fmt(R.total)+'.</p></div>'+
+    '<div class="panel"><div class="rowh"><h2>Fiyat eğrisi: '+MONTHS[mi]+'</h2><div class="fld" style="min-width:160px"><select id="op-pdMonth" data-opt="pdMonth" aria-label="Ay">'+MONTHS.map((m,i)=>'<option value="'+i+'"'+(i===mi?' selected':'')+'>'+m+'</option>').join('')+'</select></div></div>'+
+    pdCurve(mo,cu)+'<p class="hint">Eğri, '+MONTHS[mi]+' ayının '+esc(M)+' değerini fiyata göre gösterir ('+cu+', bin). Tepe noktası en iyi fiyattır; eğri tepede düzse küçük fiyat hatalarının maliyeti azdır.</p></div>'+
+    '<div class="panel"><h2>Esnekliğe duyarlılık</h2><div class="scroll"><table class="pbt"><thead><tr><th>Esneklik ε</th><th class="n">Yıllık '+esc(M)+' artışı</th><th class="n">Ortalama fiyat değişimi</th><th class="n">Sınırdaki ay</th></tr></thead><tbody>'+sens+'</tbody></table></div>'+
+    '<p class="hint">Aynı sınırlar ve hedefle, tüm aylar için tek bir esneklik denenir (aylık özel değerler yoksayılır). Esneklik −1\'e yaklaştıkça fiyat artışının getirisi azalır; çok esnek talepte (ε çok negatif) fiyat artırmak değil indirmek kazandırabilir.</p></div>';
+}
+function viewOpt4(){
+  const p=P(),pd=pdView(p),o=optOf();
+  const sel=(k,val,opts)=>'<select id="pd-'+k+'" data-pdsel="'+k+'">'+opts.map(a=>'<option value="'+a[0]+'"'+(String(val)===String(a[0])?' selected':'')+'>'+a[1]+'</option>').join('')+'</select>';
+  const mon=MONTHS.map((m,i)=>'<div class="fld"><label for="pd-m'+i+'">'+m+'</label><input id="pd-m'+i+'" type="text" inputmode="decimal" data-pd="mon:'+i+'" placeholder="'+String(pd.eps).replace('.',',')+'" value="'+(pd.mon&&pd.mon[i]!=null&&pd.mon[i]!==''?esc(String(pd.mon[i]).replace('.',',')):'')+'"></div>').join('');
+  return optSub()+'<div class="panel"><h2>Fiyat-doluluk optimizasyonu</h2>'+
+   '<details open><summary>Ne işe yarar</summary><p class="hint" style="margin-top:6px">Fiyat yükselince doluluk düşer, fiyat düşünce artar. Önceki modüller bu etkileşimi görmezdi; burada talep, tek bir fiyat esnekliği ile modellenir: ADR %10 artarsa ve esneklik −1,2 ise doluluk yaklaşık %11 düşer. Uygulama her ay için en yüksek NOI (veya GOP, gelir) veren fiyatı ve beklenen doluluğunu bulur. Değişken maliyet (misafir başına gider, OTA komisyonu) varsa kâr en yüksek fiyat, gelir en yüksek fiyattan yüksektir; bu fark ekranda görünür.</p></details>'+
+   '<div class="pbform" style="margin-top:12px">'+
+   '<div class="fld"><label for="pd-obj">Hedef</label>'+sel('obj',pd.obj,Object.keys(PD_OBJ).map(k=>[k,PD_OBJ[k].n]))+'</div>'+
+   '<div class="fld"><label for="pd-eps">Fiyat esnekliği ε</label><input id="pd-eps" type="text" inputmode="decimal" data-pd="eps" value="'+String(pd.eps).replace('.',',')+'"><small>Negatif girin. Doluluk değişimi % ÷ fiyat değişimi %. Varsayım, kaynaksız: geçmiş fiyat değişimlerinizden veya sezonlar arası farktan tahmin edin.</small></div>'+
+   '<div class="fld"><label for="pd-bound">Fiyat sınırı</label>'+sel('bound',pd.bound,[10,15,25,40].map(v=>[v,'±%'+v]))+'<small>Fiyat, mevcut ADR\'nin bu aralığında aranır.</small></div>'+
+   '<div class="fld"><label for="pd-minOcc">Doluluk tabanı %</label><input id="pd-minOcc" type="text" inputmode="decimal" data-pd="minOcc" value="'+String(pd.minOcc).replace('.',',')+'"><small>0 ise sınır yok. Doluluğun altına düşmesini istemediğiniz seviye.</small></div></div>'+
+   '<details style="margin-top:10px"><summary>Aylara göre farklı esneklik (isteğe bağlı)</summary><p class="hint">Yüksek sezonda talep genelde daha az esnektir. Boş bırakılan ay yukarıdaki değeri kullanır.</p><div class="pbform">'+mon+'</div></details></div>'+
+   '<div id="opt-out4">'+pdOut()+'</div>';
+}
+(function(){
+  const refresh=()=>{const o=$('#opt-out4');if(o)o.innerHTML=pdOut();};
+  const parse=v=>{const n=parseFloat(String(v).replace(',','.'));return isFinite(n)?n:0;};
+  document.addEventListener('input',e=>{
+    const t=e.target,k=t.dataset&&t.dataset.pd;if(!k)return;
+    const pd=pdEdit(P()),[a,i]=k.split(':');
+    if(a==='mon'){pd.mon=pd.mon||[];pd.mon[+i]=t.value===''?null:parse(t.value);}
+    else pd[a]=parse(t.value);
+    save();refresh();
+  });
+  document.addEventListener('change',e=>{
+    const t=e.target,k=t.dataset&&t.dataset.pdsel;if(!k)return;
+    pdEdit(P())[k]=k==='obj'?t.value:+t.value;save();refresh();
   });
 })();
 function render(){
