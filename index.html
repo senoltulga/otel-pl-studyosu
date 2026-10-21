@@ -170,6 +170,8 @@ textarea{width:100%;min-height:90px;font-family:var(--mono);font-size:11px}
 
 
 .mobonly{display:none}
+.proj{align-items:center}.acct{margin-left:auto;display:flex;gap:8px;align-items:center}
+body.locked .wrap{display:none}.dlg.lock{background:var(--bg,#f4f6f6);align-items:center}
 @media (max-width:640px){
   .wrap{gap:12px}
   .brand h1{font-size:20px}.brand span{display:none}
@@ -206,7 +208,6 @@ textarea{width:100%;min-height:90px;font-family:var(--mono);font-size:11px}
     <div class="proj">
       <select id="curSel" data-ln="cur:base" aria-label="Ana para birimi" title="Ana para birimi: tüm sonuçlar bu birimde"><option>USD</option><option>EUR</option><option>TL</option></select>
       <select id="projSel" aria-label="Proje"></select>
-      <span id="acct" class="acct"></span>
       <span id="saveSt" class="savest none" aria-live="polite"></span>
       <button class="btn" data-click="openDlg">Aç</button>
       <button class="btn primary" data-click="saveProj">Kaydet</button>
@@ -214,6 +215,7 @@ textarea{width:100%;min-height:90px;font-family:var(--mono);font-size:11px}
       <button class="btn" data-click="newProj">Yeni proje</button>
       <button class="btn" data-click="dupProj">Kopyala</button>
       <button class="btn danger" data-click="delProj">Sil</button>
+      <span id="acct" class="acct"></span>
     </div>
   </header>
   <section class="strip" id="strip" aria-live="polite"></section>
@@ -322,6 +324,8 @@ const EXAMPLE_PROJ={"name":"Manuel örneği: 29 odalı butik otel","rooms":29,"o
 {"id":"L128","group":"rev_fb","name":"F&B kira geliri (marka kiralama)","driver":"fixed","value":1000000,"staff":false,"monthly":null,"cur":"TL"},
 {"id":"L9001","group":"sm","name":"OTA komisyonu","driver":"pctRoomRev","value":15,"staff":false,"monthly":null},
 {"id":"L9002","group":"fixed","name":"Sigorta ve emlak vergisi","driver":"fixed","value":3000,"staff":false,"monthly":null}],"cur":"EUR","fx":{"TL":1,"USD":49.57,"EUR":55.64},"adrCur":null};
+let READY=false;
+const isLocked=()=>!(typeof USER!=='undefined'&&USER);
 /* ---------- Kütüphane: Kaydet / Farklı kaydet / Aç ---------- */
 const LIBK='otelpl.lib.v1';
 let LIB=[];
@@ -386,18 +390,28 @@ async function libDel(id,b){
   save();renderDlg();render();
 }
 function openDlg(mode){S.dlg=mode;renderDlg();}
-function closeDlg(){S.dlg=null;const d=$('#dlg');if(d){d.hidden=true;d.innerHTML='';}}
+function applyLock(){
+  const lock=!(typeof USER!=='undefined'&&USER);
+  document.body.classList.toggle('locked',lock);
+  if(lock){if(S.dlg!=='login')S.dlg='login';}
+  else if(S.dlg==='login'&&document.body.dataset.wasLocked==='1')S.dlg=null;
+  document.body.dataset.wasLocked=lock?'1':'0';
+}
+function closeDlg(){if(isLocked())return;S.dlg=null;const d=$('#dlg');if(d){d.hidden=true;d.innerHTML='';}}
 function renderDlg(){
   const d=$('#dlg');if(!d)return;
+  applyLock();
+  d.classList.toggle('lock',isLocked());
+  if(!READY){d.innerHTML='<div class="dbox"><h2>Otel P&amp;L Stüdyosu</h2><p class="hint">Yükleniyor…</p></div>';d.hidden=false;return;}
   if(!S.dlg){d.hidden=true;d.innerHTML='';return;}
   const p=P();
   if(S.dlg==='login'){
-    d.innerHTML=`<div class="dbox" role="dialog" aria-label="Giriş"><h2>Giriş yap</h2>
+    d.innerHTML=`<div class="dbox" role="dialog" aria-label="Giriş"><h2>${isLocked()?'Otel P&amp;L Stüdyosu':'Giriş yap'}</h2>${isLocked()?'<p class="hint">Uygulamayı kullanmak için giriş yapın veya kayıt olun.</p>':''}
      <div class="fld"><label for="lgEmail">E-posta</label><input id="lgEmail" type="text" autocomplete="email"></div>
      <div class="fld"><label for="lgPass">Şifre</label><input id="lgPass" type="password" autocomplete="current-password"></div>
-     <div class="drow"><button class="btn primary" data-click="doLogin">Giriş yap</button><button class="btn" data-click="doSignup">Kayıt ol</button><button class="btn" data-click="doMagic">E-posta bağlantısı gönder</button><button class="btn" data-click="dlgClose">Vazgeç</button></div>
+     <div class="drow"><button class="btn primary" data-click="doLogin">Giriş yap</button><button class="btn" data-click="doSignup">Kayıt ol</button><button class="btn" data-click="doMagic">E-posta bağlantısı gönder</button>${isLocked()?'':'<button class="btn" data-click="dlgClose">Vazgeç</button>'}</div>
      <p id="lgMsg" class="hint" aria-live="polite"></p>
-     <p class="hint">Kayıtlarınız hesabınıza bağlı saklanır ve yalnız siz görürsünüz. Girmeden de uygulamayı kullanabilirsiniz; kayıtlar o zaman yalnız bu tarayıcıda kalır. Uygulama karar destek aracıdır, yatırım tavsiyesi değildir.</p></div>`;
+     <p class="hint">Kayıtlarınız hesabınıza bağlı saklanır ve yalnız siz görürsünüz. Uygulama karar destek aracıdır, yatırım tavsiyesi değildir.</p></div>`;
   }else if(S.dlg==='saveas'){
     d.innerHTML=`<div class="dbox" role="dialog" aria-label="Farklı kaydet"><h2>Farklı kaydet</h2>
      <div class="fld"><label for="dlgName">Ad</label><input id="dlgName" type="text" value="${esc(p.name)}"></div>
@@ -460,18 +474,18 @@ function renderAcct(){
   const el=$('#acct');if(!el)return;
   if(!SB){el.innerHTML='';return;}
   const lim=LIMIT&&!LIMIT.unlimited?` · kalan giriş: ${Math.max(0,LIMIT.login_limit-LIMIT.login_count)}/${LIMIT.login_limit}`:'';
-  el.innerHTML=USER?`<span class="savest" title="${esc(USER.email||'')}">${esc(USER.email||'')}${lim}</span><button class="btn small" data-click="doLogout">Çıkış</button>`:`<button class="btn small" data-click="loginDlg">Giriş yap</button>`;
+  el.innerHTML=USER?`<span class="savest" title="${esc(USER.email||'')}">${esc(USER.email||'')}${lim}</span><button class="btn small" data-click="doLogout">Çıkış</button>`:'';
 }
 if(SB){
   SB.auth.onAuthStateChange((ev,sess)=>{
     USER=sess&&sess.user?sess.user:null;
     setTimeout(async()=>{
-      await cloudLoad();await limitLoad();renderAcct();updSt();
-      if(ev==='SIGNED_IN'&&S.dlg==='login')closeDlg();
-      if(S.dlg==='open')renderDlg();
+      await cloudLoad();await limitLoad();READY=true;
+      if(!USER)CLOUD=[];
+      renderAcct();updSt();render();
     },0);
   });
-}
+}else{READY=true;}
 const AUTHERR=m=>{m=String(m||'');
   if(/Invalid login/i.test(m))return 'E-posta veya şifre hatalı.';
   if(/Email not confirmed/i.test(m))return 'E-posta henüz onaylanmadı. Gelen kutunuzdaki bağlantıya tıklayın.';
@@ -863,7 +877,7 @@ const KSEC=[
   <ul><li><b>Kaydet:</b> proje daha önce kaydedildiyse aynı kaydı günceller, ilk kez kaydediliyorsa Farklı kaydet penceresini açar. Yanındaki durum yazısı "Kaydedildi", "Kaydedilmemiş değişiklik" veya "Kütüphaneye kaydedilmedi" der.</li>
   <li><b>Farklı kaydet:</b> projeyi yeni bir adla kaydeder. Tür seçersiniz: <i>Case</i> üzerinde çalışmaya devam edeceğiniz kayıttır, Kaydet onu günceller. <i>Şablon</i> her açtığınızda yeni bir kopya verir ve kendisi değişmez.</li>
   <li><b>Aç:</b> kayıtlı case'leri, şablonları ve hazır örnekleri (Kozyatağı şablonu, butik otel case) listeler. Seçtiğiniz kayıt yeni bir çalışma projesi olarak açılır; istediğiniz kadar değiştirip Farklı kaydet ile başka adla saklayabilirsiniz. Aynı pencereden kayıt silinir.</li>
-  <li><b>Giriş yap:</b> e-posta ve şifreyle (veya e-postaya gelen bağlantıyla) giriş yaparsanız kayıtlarınız hesabınıza bağlı saklanır, başka cihazdan da açılır ve yalnız siz görürsünüz. Girmeden kullanırsanız kayıtlar yalnız bu tarayıcıda kalır. İlk girişte tarayıcıdaki eski kayıtları Aç penceresinden hesabınıza aktarabilirsiniz.</li>
+  <li><b>Giriş:</b> uygulamayı kullanmak için e-posta ve şifreyle (veya e-postaya gelen bağlantıyla) giriş yapmanız ya da kayıt olmanız gerekir. Kayıtlarınız hesabınıza bağlı saklanır, başka cihazdan da açılır ve yalnız siz görürsünüz. Giriş/çıkış düğmeleri üst çubuğun sağ ucundadır. Daha önce bu tarayıcıda kaydettiğiniz kayıtları tarayıcıdaki eski kayıtları Aç penceresinden hesabınıza aktarabilirsiniz.</li>
   <li><b>Dosyaya indir / Dosyadan yükle:</b> aktif projeyi .json dosyası olarak yedekler veya başka bilgisayara taşır.</li></ul>
   <h3>Örnek akış</h3><ol><li>Aç → Hazır örnekler → Butik otel case.</li><li>Girdiler'de ADR'yi %10 artırın ve P&amp;L'de etkiyi görün.</li><li>Farklı kaydet → "Butik case, ADR +%10", tür Case.</li><li>Sonra Aç → Kayıtlı case'lerim'den ikisini ayrı ayrı açıp karşılaştırın.</li></ol>
   <p class="hint">Girişsiz kullanımda kayıtlar tarayıcıda tutulur ve tarayıcı verisi temizlenirse kaybolur. Girişli kullanımda bile önemli çalışmaları ara sıra dosyaya indirmek iyi bir yedektir.</p>`],
