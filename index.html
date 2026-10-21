@@ -410,11 +410,15 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.dlg)closeDlg();})
 document.addEventListener('mousedown',e=>{if(S.dlg&&e.target.id==='dlg')closeDlg();});
 /* ---------- Bulut: Supabase giriş ve kayıt kütüphanesi ---------- */
 const SB_URL='https://jgonmnmlbopzdzgfofpm.supabase.co',SB_KEY='sb_publishable_-m2otqfKkJspYlIXwW4BCA_fxkUou4h';
-let SB=null,USER=null,CLOUD=[];
+let SB=null,USER=null,CLOUD=[],LIMIT=null;
 try{if(window.supabase&&window.supabase.createClient)SB=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}catch(e){SB=null;}
 const useCloud=()=>!!(SB&&USER);
 const curLib=()=>useCloud()?CLOUD:LIB;
 const rowToEntry=r=>({id:r.id,kind:r.kind,name:r.name,data:r.data,saved:Date.parse(r.updated_at)||Date.now()});
+async function limitLoad(){
+  LIMIT=null;if(!useCloud())return;
+  try{const {data}=await SB.from('opl_limits').select('login_limit,login_count,unlimited').maybeSingle();if(data)LIMIT=data;}catch(e){}
+}
 async function cloudLoad(){
   if(!useCloud())return;
   const {data,error}=await SB.from('opl_cases').select('id,name,kind,data,updated_at').order('updated_at',{ascending:false});
@@ -424,13 +428,14 @@ async function cloudLoad(){
 function renderAcct(){
   const el=$('#acct');if(!el)return;
   if(!SB){el.innerHTML='';return;}
-  el.innerHTML=USER?`<span class="savest" title="${esc(USER.email||'')}">${esc(USER.email||'')}</span><button class="btn small" data-click="doLogout">Çıkış</button>`:`<button class="btn small" data-click="loginDlg">Giriş yap</button>`;
+  const lim=LIMIT&&!LIMIT.unlimited?` · kalan giriş: ${Math.max(0,LIMIT.login_limit-LIMIT.login_count)}/${LIMIT.login_limit}`:'';
+  el.innerHTML=USER?`<span class="savest" title="${esc(USER.email||'')}">${esc(USER.email||'')}${lim}</span><button class="btn small" data-click="doLogout">Çıkış</button>`:`<button class="btn small" data-click="loginDlg">Giriş yap</button>`;
 }
 if(SB){
   SB.auth.onAuthStateChange((ev,sess)=>{
     USER=sess&&sess.user?sess.user:null;
     setTimeout(async()=>{
-      await cloudLoad();renderAcct();updSt();
+      await cloudLoad();await limitLoad();renderAcct();updSt();
       if(ev==='SIGNED_IN'&&S.dlg==='login')closeDlg();
       if(S.dlg==='open')renderDlg();
     },0);
