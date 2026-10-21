@@ -213,6 +213,8 @@ details summary{cursor:pointer;font-size:13px;color:var(--accent)}
 .tobar.dn{background:var(--muted);opacity:.7}.tobar.up{background:var(--accent)}
 .toval{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
 @media (max-width:640px){.otab td:first-child,.otab th:first-child{white-space:normal;min-width:120px;max-width:140px}.torow{grid-template-columns:1fr;gap:2px}.tonm{font-weight:500}}
+.ow{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}.ow.ok{color:var(--good);border-color:var(--good)}.ow.bad{color:var(--bad);border-color:var(--bad)}
+.pbt tr.mut td{color:var(--muted)}
 </style>
 
 <div class="wrap" id="app">
@@ -803,10 +805,11 @@ function kvCalc(){
   dc.method='gordon';dc.netDebt=0;dc.price=0;
   cp.profile='uu';cp.soft=cpxMid(CX.s);cp.full=cpxMid(CX.f);
   const cx=cpxPlan(p);
+  const pT=pclone(EXAMPLE_PROJ),goal=optSolveAll(pT,'noi',900000),goalA=goal.rows.find(x=>x.lv.id==='adr'),goalO=goal.rows.find(x=>x.lv.id==='occ'),goalAmt=(()=>{const q=pclone(pT);goalA.lv.ap(q,goalA.f);return {c0:compute(pT),c1:compute(q)};})();
   const pO=pclone(EXAMPLE_PROJ),opt1=optSens(pO,'noi',10,'group'),opt2=optSens(pO,'gop',10,'group'),RR0=sum(compute(pO).roomRev);
   cp.link=true;const pb3=run(),dcf3=dcfCalc(p);cp.link=false;
   const cpxRows=cx.rows.filter(r=>r.capex>0||r.t<1);
-  return {opt1,opt2,RR0,p,c,AV,SO,RR,REV,L,staffTot:sum(c.staff),pb1,pb2,pb3,dcf1,dcf2,dcf3,sens,cx,cpxRows,
+  return {goal,goalA,goalO,goalAmt,opt1,opt2,RR0,p,c,AV,SO,RR,REV,L,staffTot:sum(c.staff),pb1,pb2,pb3,dcf1,dcf2,dcf3,sens,cx,cpxRows,
     hz:{cap:c.avail[5],sold:c.sold[5],rev:c.roomRev[5],gn:c.gn[5],may:{cap:c.avail[4],sold:c.sold[4],rev:c.roomRev[4]}}};
 }
 const pp=v=>'%'+pct(v).slice(0,-1);
@@ -821,7 +824,7 @@ function tb(head,rows){
 }
 const KSEC=[
  ['basla','Başlarken',v=>`<p>Uygulama, doluluk ve ADR'den başlayarak P&amp;L, KPI, geri dönüş, DCF ve renovasyon hesaplarını tek yerde yapar. Sekmeler soldan sağa bir sırayı izler: önce girdiler, en sonda yatırım kararı.</p>`+
-  tb(['Sekme','Ne işe yarar','Ne zaman'],[['Girdiler','Oda sayısı, aylık doluluk, ADR ve kurlar','Her projeye önce buradan başlanır'],['Gelir-Gider','Gelir ve gider kalemleri ve hesaplama biçimleri','Maliyet yapısı kurulurken'],['P&amp;L','Gelirden GOP ve NOI\'ye giden tablo','Sonucu okurken'],['KPI','Doluluk, ADR, RevPAR, GOPPAR','Oteli başka otellerle kıyaslarken'],['Geri dönüş','Yatırımın kaç yılda geri döndüğü','Satın alma kararında'],['DCF','Otelin bugünkü değeri','Fiyat pazarlığında'],['Renovasyon','Yenileme bütçesi ve getiriye etkisi','Capex planlanırken'],['Optimizasyon','Hangi varsayım sonucu en çok oynatıyor (tornado)','Neye odaklanacağınıza karar verirken']])+
+  tb(['Sekme','Ne işe yarar','Ne zaman'],[['Girdiler','Oda sayısı, aylık doluluk, ADR ve kurlar','Her projeye önce buradan başlanır'],['Gelir-Gider','Gelir ve gider kalemleri ve hesaplama biçimleri','Maliyet yapısı kurulurken'],['P&amp;L','Gelirden GOP ve NOI\'ye giden tablo','Sonucu okurken'],['KPI','Doluluk, ADR, RevPAR, GOPPAR','Oteli başka otellerle kıyaslarken'],['Geri dönüş','Yatırımın kaç yılda geri döndüğü','Satın alma kararında'],['DCF','Otelin bugünkü değeri','Fiyat pazarlığında'],['Renovasyon','Yenileme bütçesi ve getiriye etkisi','Capex planlanırken'],['Optimizasyon','Duyarlılık (tornado) ve hedef arama','Neye odaklanacağınıza ve hedefin gerçekçi olup olmadığına karar verirken']])+
   `<h3>Örnek case</h3><p>Bu kılavuzdaki tüm sayılar tek bir örnekten gelir ve <b>bu sayfada uygulamanın kendi hesabıyla üretilir</b>: Bodrum'da 29 odalı bir butik otel. Rakamlar öğretici amaçlıdır. Aynı projeyi Aç menüsünden "Hazır örnekler" altında açıp kendiniz deneyebilirsiniz.</p>`+
   tb(['Girdi','Değer'],[['Oda sayısı','29, 12 ay açık'],['Doluluk','%65, tüm aylar'],['ADR','200 EUR (Haziran–Eylül), 125 EUR (diğer aylar)'],['Oda başına misafir','2'],['Ana para birimi ve kurlar','EUR. 1 USD = 49,57 TL, 1 EUR = 55,64 TL'],['Personel','3 kişi, kişi başı brüt 75.000 TL × 1,2375 = 92.812,50 TL/ay'],['F&amp;B','Markaya kiralama, 1.000.000 TL/ay kira geliri'],['Örnek için eklenenler','OTA komisyonu (oda gelirinin %15\'i), sigorta ve emlak vergisi (3.000 EUR/ay)'],['Satın alma fiyatı','8.000.000 EUR (geri dönüş ve DCF için)']])+
   `<p class="hint">Kurlar 20–21 Ekim 2026 değerleridir, elle girilir, canlı değildir.</p>`],
@@ -888,13 +891,20 @@ const KSEC=[
   tb(['Yıl','Capex','Kayıp','Artış','Net','Kümülatif'],v.cpxRows.map(r=>[r.t,nf.format(r.capex),nf.format(r.lost),nf.format(r.up),sf(r.net),sf(r.cum)]))+
   `<p>Bu otelde ADR artışı varsayımı (%6) yenileme maliyetini karşılamıyor. Getiriyi pozitife çevirmek için kapsamı soft goods'a düşürün ya da ADR artışını gerçekçi bir hedefe göre ayarlayın.</p>
   <h3>Diğer sekmelerle bağlantı</h3><p>Renovasyon sekmesindeki "Geri dönüş ve DCF sekmelerine ekle" kutusunu işaretlerseniz yenileme yatırımı, kaybı ve artışı iki sekmenin hesaplarına eklenir (Geri dönüş: yatırım ${nf.format(v.pb3.I0)} EUR; DCF: EV ${nf.format(v.dcf3.ev)} EUR).</p>`;}],
- ['optim','Optimizasyon: duyarlılık',v=>{const r=v.opt1,t=r.rows[0],g=v.opt2,M=OPT_METRICS.noi;return `<p>Optimizasyon sekmesi, hangi varsayımın sonucu en çok oynattığını gösterir. Her girdiyi tek tek %10 yukarı ve %10 aşağı çeker, geri kalanını sabit tutar, NOI veya seçtiğiniz ölçütün ne kadar değiştiğini ölçer. Sonuç bir tornado grafiğidir: en uzun çubuk en önemli kaldıraçtır. Sekmede dört modül planlıdır; şimdilik 1. modül (Duyarlılık) açıktır.</p>
+ ['optim','Optimizasyon: duyarlılık',v=>{const r=v.opt1,t=r.rows[0],g=v.opt2,M=OPT_METRICS.noi;return `<p>Optimizasyon sekmesi, hangi varsayımın sonucu en çok oynattığını gösterir. Her girdiyi tek tek %10 yukarı ve %10 aşağı çeker, geri kalanını sabit tutar, NOI veya seçtiğiniz ölçütün ne kadar değiştiğini ölçer. Sonuç bir tornado grafiğidir: en uzun çubuk en önemli kaldıraçtır. Sekmede dört modül planlıdır; şimdilik 1. modül (Duyarlılık) ve 2. modül (Hedef arama) açıktır.</p>
   <h3>Nasıl okunur</h3><ol><li>Sonuç ölçütünü seçin: NOI, GOP, DCF işletme değeri veya geri dönüş süresi. DCF ve geri dönüş, kendi sekmelerindeki varsayımları kullanır.</li><li>Değişim adımını seçin (±%5 ile ±%25). Adım büyüdükçe çubuklar uzar, sıralama genelde aynı kalır.</li><li>Gider ayrıntısını seçin: "Grup bazında" kalemleri gruplar halinde, "Kalem bazında" her kalemi ayrı oynatır (örneğin OTA komisyonunu ayrı görmek için).</li><li>Çubuk renkleri girdinin yönünü gösterir: gri, girdi azalırsa; yeşil, girdi artarsa. Gelirde artış sonucu yükseltir, giderde artış düşürür; bu yüzden gider çubukları ters taraftadır.</li></ol>
   <h3>Örnek case: ${M.n} ±%10</h3><p>Baz NOI ${nf.format(Math.round(r.base))} EUR. En çok oynatan kaldıraçlar:</p>`+
   tb(['Kaldıraç','Girdi −%10','Girdi +%10','Esneklik'],r.rows.slice(0,6).map(x=>[x.lv.name,sf(x.lo),sf(x.hi),(x.el>=0?'+':'−')+Math.abs(x.el).toFixed(2).replace('.',',')]))+
   `<p><b>Esneklik</b>, girdi %1 değişince sonucun yüzde kaç değiştiğidir. ADR'de ${(t.el).toFixed(2).replace('.',',')}: ADR %1 artarsa NOI yaklaşık %${(t.el).toFixed(2).replace('.',',')} artar. Eksi esneklik, girdi artınca sonuç düşer demektir (giderler).</p>
   <p><b>Doğrulama:</b> ADR'yi %10 artırınca oda geliri ${nf.format(Math.round(v.RR0))} EUR × %10 = ${nf.format(Math.round(v.RR0*0.1))} EUR artar. Bunun %15'i OTA komisyonuna, %4'ü FF&amp;E rezervine gider; kalan %81 NOI'ye yansır: ${nf.format(Math.round(v.RR0*0.1))} × 0,81 = ${nf.format(Math.round(v.RR0*0.081))} EUR. Tabloda ADR +%10 satırı ${sf(t.hi)} EUR, yani el hesabıyla aynı.</p>
   <h3>Dikkat edilecekler</h3><ul><li>Doluluk göreli değişir: %65 doluluk %10 artınca %71,5 olur, %100'ü geçmez.</li><li>Tornado her kaldıracı tek başına oynatır. Gerçekte ADR yükselirse doluluk düşebilir; bu etkileşimi 4. modül (fiyat-doluluk) ele alacak.</li><li>Kur etkisi (TL giderlerin euro karşılığı) bu modülde yoktur; Girdiler sekmesinden kur değiştirerek bakabilirsiniz.</li><li>Sıralama bir öneri değildir: bir kaldıracın hassas olması, onu kolay değiştirebileceğiniz anlamına gelmez. Neye odaklanacağınızı seçerken ölçüt budur.</li></ul>`;}],
+ ['hedef','Optimizasyon: hedef arama',v=>{const G=v.goal,a=v.goalA,o=v.goalO,A=v.goalAmt,M=OPT_METRICS.noi;return `<p>Duyarlılık "bu girdi oynarsa ne olur?" diye sorar. Hedef arama tersini sorar: <b>"NOI şu değer olsun, bunun için ne olmalı?"</b> Bir hedef değer girersiniz; uygulama her kaldıracı tek başına çevirip hedefe ulaşmak için gereken değeri bulur. Hedefin gerçekçi olup olmadığını görmenin en hızlı yoludur: yıllık NOI için ADR'de %17'lik artış makuldür, giderde %80'lik kesinti hayaldir.</p>
+  <h3>Nasıl kullanılır</h3><ol><li>Optimizasyon sekmesinde "2 Hedef arama"yı seçin ve sonuç ölçütünü belirleyin (NOI, GOP, DCF değeri, geri dönüş). Başlangıç hedefi otomatik önerilir (şimdiki değerin %20 üstü, geri dönüşte %20 altı); kendi hedefinizi yazın.</li><li>Tabloda her kaldıraç için şimdiki ve gereken değer, değişim oranı ve durum görünür. Durum etiketi: <b>makul</b> ±%25 içinde, <b>zorlu</b> ±%50 içinde, <b>gerçekçi değil</b> daha fazlası. "Tek başına yetmez", kaldıraç tamamen sıfırlansa veya üçe katlansa bile hedefe ulaşılamadığı anlamına gelir; parantezde ulaşılabilen en iyi değer yazar.</li><li>"Seçilen çözüm" bölümünden bir kaldıraç seçin: çözümde gelir, GOP, NOI, doluluk ve ADR'nin nasıl değiştiğini görürsünüz. Çözüm projeye uygulanıp motor yeniden çalıştırılır ve hedefle karşılaştırılır (doğrulama satırı).</li></ol>
+  <h3>Örnek case: NOI 900.000 EUR</h3><p>Şimdiki NOI ${nf.format(Math.round(G.base))} EUR, hedef 900.000 EUR (+%${((900000/G.base-1)*100).toFixed(1).replace('.',',')}). Tek başına ulaşan kaldıraçlar:</p>`+
+  tb(['Kaldıraç','Şimdi','Gereken','Değişim'],G.rows.filter(x=>x.ok).map(x=>[x.lv.name,optFv(x.v0,x.lv.u),optFv(x.v1,x.lv.u),(x.d>=0?'+':'−')+'%'+Math.abs(x.d*100).toFixed(1).replace('.',',')]))+
+  `<p>Yorum: ADR ${optFv(a.v0,a.lv.u)} → ${optFv(a.v1,a.lv.u)} (+%${(a.d*100).toFixed(1).replace('.',',')}) ya da doluluk ${optFv(o.v0,o.lv.u)} → ${optFv(o.v1,o.lv.u)} makul görünür. F&amp;B kirası, misafir sayısı ve pazarlama giderinde gereken değişim gerçekçi değildir. Tüm giderler ayrı ayrı sıfırlansa bile (personel, enerji, departman giderleri) tek başına hedefe yetmez: ${G.rows.filter(x=>!x.ok).length} kaldıraç "tek başına yetmez" çıkar.</p>
+  <p><b>Doğrulama:</b> ADR ${optFv(a.v0,a.lv.u)} → ${optFv(a.v1,a.lv.u)} olunca toplam gelir ${nf.format(Math.round(sum(A.c0.rev)))} → ${nf.format(Math.round(sum(A.c1.rev)))} EUR (+${nf.format(Math.round(sum(A.c1.rev)-sum(A.c0.rev)))}). Bunun %81'i NOI'ye yansır (OTA komisyonu %15 ve FF&amp;E %4 düşülür): ${nf.format(Math.round(sum(A.c1.rev)-sum(A.c0.rev)))} × 0,81 = ${nf.format(Math.round((sum(A.c1.rev)-sum(A.c0.rev))*0.81))} EUR. ${nf.format(Math.round(G.base))} + ${nf.format(Math.round((sum(A.c1.rev)-sum(A.c0.rev))*0.81))} = ${nf.format(Math.round(sum(A.c1.noi)))} EUR, yani hedef.</p>
+  <h3>Dikkat edilecekler</h3><ul><li>Her satır yalnız bir kaldıracı çevirir. Gerçek hayatta birkaçı birlikte oynar (biraz ADR, biraz gider); kombinasyonlar sonraki modüllerin işi.</li><li>ADR yükselince doluluk düşebilir; bu etki burada yoktur, 4. modül (fiyat-doluluk) ele alacak. ADR çözümü bu yüzden iyimser okunmalıdır.</li><li>Doluluk aylık olarak %100 ile sınırlıdır. Yıllık ortalama hedefi yüksekse, yüksek sezon ayları sınırı aşamadığı için gereken artış büyür.</li><li>Geri dönüş ölçütünde yatırım tutarı girilmiş olmalıdır; DCF ölçütü DCF sekmesindeki varsayımları kullanır.</li></ul>`;}],
  ['kayit','Kaydet, Aç ve şablonlar',v=>`<p>Üst çubuktaki üç düğme çalışmalarınızı kalıcı biçimde saklar. Üzerinde çalıştığınız proje tarayıcıda otomatik tutulur; <b>Kaydet</b> ise onu adlandırılmış bir kayıt olarak kütüphaneye ekler.</p>
   <ul><li><b>Kaydet:</b> proje daha önce kaydedildiyse aynı kaydı günceller, ilk kez kaydediliyorsa Farklı kaydet penceresini açar. Yanındaki durum yazısı "Kaydedildi", "Kaydedilmemiş değişiklik" veya "Kütüphaneye kaydedilmedi" der.</li>
   <li><b>Farklı kaydet:</b> projeyi yeni bir adla kaydeder. Tür seçersiniz: <i>Case</i> üzerinde çalışmaya devam edeceğiniz kayıttır, Kaydet onu günceller. <i>Şablon</i> her açtığınızda yeni bir kopya verir ve kendisi değişmez.</li>
@@ -955,6 +965,14 @@ function optLevers(p,detail){
         L.push({id:'g:'+g.id,name:g.name+(lines.some(l=>l.group===g.id&&l.staff)?' – personel hariç':''),hint:'gruptaki tüm kalemler',ap:scale(new Set(ls.map(l=>l.id)))});
     });
   }
+  const idsOf=id=>id.startsWith('l:')?[id.slice(2)]:id==='staff'?lines.filter(l=>l.staff).map(l=>l.id):id.startsWith('g:')?lines.filter(l=>l.group===id.slice(2)&&!l.staff).map(l=>l.id):null;
+  L.forEach(lv=>{
+    if(lv.id==='occ')lv.val=q=>{const k=compute(q);return sum(k.sold)/sum(k.avail)*100;},lv.u='%';
+    else if(lv.id==='adr')lv.val=q=>{const k=compute(q);return sum(k.roomRev)/(sum(k.sold)||1);},lv.u=CUR();
+    else if(lv.id==='guests')lv.val=q=>q.guests,lv.u='';
+    else if(lv.id==='ffe')lv.val=q=>q.ffe,lv.u='%';
+    else{const ids=idsOf(lv.id)||[];lv.val=q=>{const k=compute(q);return sum(ids.map(i=>sum(k.line[i]||[])));};lv.u=CUR()+'/yıl';}
+  });
   return L;
 }
 function optSens(p,metric,step,detail){
@@ -1003,11 +1021,10 @@ function optOut(){
     '<div class="panel"><h2>Tablo</h2><div class="scroll"><table class="pbt otab"><thead><tr><th>Kaldıraç</th><th class="n">Girdi −%'+o.step+'</th><th class="n">Girdi +%'+o.step+'</th><th class="n">Salınım</th><th class="n">Esneklik</th></tr></thead><tbody>'+tb2+'</tbody></table></div>'+
     '<p class="hint">Etkiler baz sonuca göre farktır ('+(o.metric==='pay'?'yıl':CUR())+'). Esneklik: girdi %1 artınca sonuç yüzde kaç değişir (örn. +0,50 → girdi %1 artarsa sonuç %0,5 artar). Salınım: iki uç arasındaki fark, sıralama ölçütüdür.</p></div>';
 }
-function viewOptim(){
+function viewOpt1(){
   const o=optOf();
   const sel=(k,opts)=>'<select id="op-'+k+'" data-opt="'+k+'">'+opts.map(a=>'<option value="'+a[0]+'"'+(String(o[k])===String(a[0])?' selected':'')+'>'+a[1]+'</option>').join('')+'</select>';
-  return '<div class="osub" role="group" aria-label="Optimizasyon modülleri"><button class="on" aria-pressed="true">1 Duyarlılık</button>'+
-    '<button disabled title="Sıradaki modül">2 Hedef arama</button><button disabled title="Sıradaki modül">3 Capex portföyü</button><button disabled title="Sıradaki modül">4 Fiyat-doluluk</button></div>'+
+  return optSub()+
     '<div class="panel"><h2>Duyarlılık analizi</h2>'+
     '<details open><summary>Ne işe yarar</summary><p class="hint" style="margin-top:6px">Her girdiyi tek tek yukarı ve aşağı oynatıp seçtiğiniz sonucun (NOI, GOP, DCF değeri, geri dönüş) ne kadar değiştiğini ölçer. En uzun çubuk, en çok dikkat edilmesi gereken kaldıraçtır. Hangi varsayımın yanlış çıkması sonucu en çok bozar, ve pazarlık veya yönetim eforu nereye harcanmalı sorularını cevaplar. Sonraki modüller (hedef arama, capex portföyü) bu sıralamayla başlar.</p></details>'+
     '<div class="pbform" style="margin-top:12px">'+
@@ -1018,7 +1035,97 @@ function viewOptim(){
 }
 document.addEventListener('change',e=>{
   const t=e.target,k=t.dataset&&t.dataset.opt;if(!k)return;
-  optOf()[k]=k==='step'?+t.value:t.value;render();
+  const o=optOf();o[k]=k==='step'?+t.value:t.value;
+  if(k==='metric'||k==='detail'){o.target=null;o.pick=null;}
+  if(k==='target')return;
+  render();
+});
+
+function optSub(){
+  const m=S.optMod||1,b=(i,t,on)=>'<button data-optmod="'+i+'" class="'+(m===i?'on':'')+'" aria-pressed="'+(m===i)+'"'+(on?'':' disabled title="Sıradaki modül"')+'>'+t+'</button>';
+  return '<div class="osub" role="group" aria-label="Optimizasyon modülleri">'+b(1,'1 Duyarlılık',1)+b(2,'2 Hedef arama',1)+b(3,'3 Capex portföyü',0)+b(4,'4 Fiyat-doluluk',0)+'</div>';
+}
+function viewOptim(){return (S.optMod||1)===2?viewOpt2():viewOpt1();}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-optmod]');if(!b||b.disabled)return;S.optMod=+b.dataset.optmod;render();});
+
+/* ---------- Modül 2: Hedef arama. Bir sonuç için hedef değer girilir, her kaldıracın tek başına gereken değişimi bulunur ---------- */
+function optSolve(p,lv,metric,T){
+  const M=OPT_METRICS[metric];
+  const g=f=>{const q=pclone(p);lv.ap(q,f);const v=M.get(q);return v===null||v===undefined||!isFinite(v)?NaN:v;};
+  const fs=[],vs=[];for(let i=0;i<=60;i++){const f=i*0.05;const v=g(f);if(!isNaN(v)){fs.push(f);vs.push(v);}}
+  let best=null;
+  for(let i=0;i<fs.length-1;i++){
+    const a=vs[i]-T,b=vs[i+1]-T;
+    if(a===0||a*b<0||b===0){const mid=(fs[i]+fs[i+1])/2,d=Math.abs(mid-1);if(!best||d<best.d)best={i,d};}
+  }
+  if(!best){const mx=Math.max(...vs),mn=Math.min(...vs);return {ok:false,max:mx,min:mn};}
+  let lo=fs[best.i],hi=fs[best.i+1],glo=vs[best.i]-T;
+  for(let k=0;k<60;k++){const m=(lo+hi)/2,gm=g(m)-T;if(isNaN(gm))break;if(gm===0){lo=hi=m;break;}if((gm<0)===(glo<0)){lo=m;glo=gm;}else hi=m;}
+  const f=(lo+hi)/2;return {ok:true,f,got:g(f)};
+}
+function optTargetOf(base,metric){
+  const o=optOf(),M=OPT_METRICS[metric];
+  const v=o.target!=null&&o.target!==''?parseFloat(String(o.target).replace(/\./g,'').replace(',','.')):NaN;
+  if(isFinite(v)&&o.targetMetric===metric)return v;
+  return metric==='pay'?Math.round(base*0.8*100)/100:Math.round(base*1.2);
+}
+function optSolveAll(p,metric,T){
+  const levs=optLevers(p,optOf().detail),base=OPT_METRICS[metric].get(p);
+  const rows=levs.map(lv=>{
+    const r=optSolve(p,lv,metric,T),v0=lv.val(p);
+    if(!r.ok)return {lv,ok:false,r,v0};
+    const q=pclone(p);lv.ap(q,r.f);return {lv,ok:true,f:r.f,got:r.got,v0,v1:lv.val(q),d:r.f-1};
+  });
+  rows.sort((a,b)=>(a.ok===b.ok)?(a.ok?Math.abs(a.d)-Math.abs(b.d):0):(a.ok?-1:1));
+  return {base,rows};
+}
+const optFv=(v,u)=>nf2.format(v)+(u?' '+u:'');
+function optOut2(){
+  const p=P(),o=optOf(),M=OPT_METRICS[o.metric],base=M.get(p);
+  if(base===null||base===undefined||!isFinite(base))return '<div class="panel"><h2>Sonuç</h2><p class="hint">'+(o.metric==='pay'?'Geri dönüş süresi hesaplanamıyor: Geri dönüş sekmesinde yatırım tutarı girin.':o.metric==='ev'?'DCF değeri hesaplanamıyor: DCF sekmesindeki büyüme ve iskonto oranlarını kontrol edin.':'Sonuç hesaplanamıyor.')+'</p></div>';
+  const T=optTargetOf(base,o.metric),A=optSolveAll(p,o.metric,T),dir=T>base?'artırmak':'düşürmek';
+  const rel=base?(T-base)/Math.abs(base):0;
+  const fd=M.fd;
+  const flag=d=>{const a=Math.abs(d);return a>0.5?'<span class="ow bad">gerçekçi değil</span>':a>0.25?'<span class="ow">zorlu</span>':'<span class="ow ok">makul</span>';};
+  const rowsH=A.rows.map(x=>x.ok?
+    '<tr><td>'+esc(x.lv.name)+'</td><td class="n">'+optFv(x.v0,x.lv.u)+'</td><td class="n">'+optFv(x.v1,x.lv.u)+'</td><td class="n">'+(x.d>=0?'+':'−')+'%'+Math.abs(x.d*100).toFixed(1).replace('.',',')+'</td><td>'+flag(x.d)+'</td></tr>':
+    '<tr class="mut"><td>'+esc(x.lv.name)+'</td><td class="n">'+optFv(x.v0,x.lv.u)+'</td><td class="n" colspan="2">tek başına yetmez (en iyi: '+M.fm(T>base?x.r.max:x.r.min)+')</td><td><span class="ow bad">ulaşılamaz</span></td></tr>').join('');
+  const ok=A.rows.filter(x=>x.ok),pick=o.pick&&ok.find(x=>x.lv.id===o.pick)?ok.find(x=>x.lv.id===o.pick):ok[0];
+  let drill='';
+  if(pick){
+    const q=pclone(p);pick.lv.ap(q,pick.f);const c0=compute(p),c1=compute(q);
+    const row=(l,a,b,f)=>'<tr><td>'+l+'</td><td class="n">'+f(a)+'</td><td class="n">'+f(b)+'</td><td class="n">'+(b-a>=0?'+':'−')+nf.format(Math.abs(Math.round(b-a)))+'</td></tr>';
+    drill='<div class="panel"><div class="rowh"><h2>Seçilen çözüm</h2><div class="fld" style="min-width:260px"><select id="op-pick" data-opt="pick" aria-label="Kaldıraç">'+ok.map(x=>'<option value="'+x.lv.id+'"'+(x.lv.id===pick.lv.id?' selected':'')+'>'+esc(x.lv.name)+'</option>').join('')+'</select></div></div>'+
+     '<p><b>'+esc(pick.lv.name)+'</b> '+optFv(pick.v0,pick.lv.u)+' değerinden <b>'+optFv(pick.v1,pick.lv.u)+'</b> değerine ('+(pick.d>=0?'+':'−')+'%'+Math.abs(pick.d*100).toFixed(1).replace('.',',')+') gelirse '+M.n+' <b>'+M.fm(pick.got)+'</b> olur.</p>'+
+     '<div class="scroll"><table class="pbt"><thead><tr><th></th><th class="n">Şimdi</th><th class="n">Çözümde</th><th class="n">Fark</th></tr></thead><tbody>'+
+     row('Toplam gelir',sum(c0.rev),sum(c1.rev),fmt)+row('GOP',sum(c0.gop),sum(c1.gop),fmt)+row('NOI (FF&E sonrası)',sum(c0.noi),sum(c1.noi),fmt)+
+     '<tr><td>Doluluk</td><td class="n">'+pct(sum(c0.sold)/sum(c0.avail))+'</td><td class="n">'+pct(sum(c1.sold)/sum(c1.avail))+'</td><td></td></tr>'+
+     '<tr><td>ADR</td><td class="n">'+nf2.format(sum(c0.roomRev)/sum(c0.sold))+'</td><td class="n">'+nf2.format(sum(c1.roomRev)/(sum(c1.sold)||1))+'</td><td></td></tr></tbody></table></div>'+
+     '<p class="hint">Doğrulama: çözüm değeri projeye uygulanıp motor yeniden çalıştırıldı; '+M.n+' '+M.fm(pick.got)+' çıktı, hedef '+M.fm(T)+'.</p></div>';
+  }
+  return '<div class="kpis"><div class="kpi"><small>Şimdi: '+M.n+'</small><b>'+M.fm(base)+'</b><em>'+M.u()+'</em></div>'+
+    '<div class="kpi"><small>Hedef</small><b>'+M.fm(T)+'</b><em>'+(T>=base?'+':'−')+'%'+Math.abs(rel*100).toFixed(1).replace('.',',')+' ('+fd(T-base)+')</em></div>'+
+    '<div class="kpi"><small>Tek başına ulaşan</small><b>'+ok.length+' / '+A.rows.length+'</b><em>kaldıraç</em></div></div>'+
+    '<div class="panel"><h2>Hedefe ulaşmak için her kaldıracın gereken değeri</h2>'+
+    '<p class="hint" style="margin:0 0 8px">Her satır, başka hiçbir şeye dokunmadan yalnız o kaldıracı çevirir. Sıralama: gereken değişim en küçük olandan büyüğe. Makul: ±%25 içinde, zorlu: ±%50 içinde.</p>'+
+    '<div class="scroll"><table class="pbt otab"><thead><tr><th>Kaldıraç</th><th class="n">Şimdi</th><th class="n">Gereken</th><th class="n">Değişim</th><th>Durum</th></tr></thead><tbody>'+rowsH+'</tbody></table></div></div>'+drill;
+}
+function viewOpt2(){
+  const o=optOf(),p=P(),M=OPT_METRICS[o.metric],base=M.get(p),ok=base!==null&&base!==undefined&&isFinite(base);
+  const T=ok?optTargetOf(base,o.metric):'';
+  const sel=(k,opts)=>'<select id="op-'+k+'" data-opt="'+k+'">'+opts.map(a=>'<option value="'+a[0]+'"'+(String(o[k])===String(a[0])?' selected':'')+'>'+a[1]+'</option>').join('')+'</select>';
+  return optSub()+'<div class="panel"><h2>Hedef arama</h2>'+
+    '<details open><summary>Ne işe yarar</summary><p class="hint" style="margin-top:6px">Ters soru sorar: "NOI 900 bin olsun, bunun için ne olmalı?" Hedef değeri girersiniz; uygulama her kaldıracı tek tek çevirip hedefe ulaşmak için gereken değeri hesaplar (ADR kaç olmalı, doluluk kaç, personel gideri ne kadar azalmalı). Hangi yolun makul, hangisinin hayal olduğunu ayırır. Müzakere veya bütçe hedefi koyarken "bu hedef gerçekçi mi?" sorusuna cevap verir.</p></details>'+
+    '<div class="pbform" style="margin-top:12px">'+
+    '<div class="fld"><label for="op-metric">Sonuç ölçütü</label>'+sel('metric',Object.keys(OPT_METRICS).map(k=>[k,OPT_METRICS[k].n]))+'</div>'+
+    '<div class="fld"><label for="op-target">Hedef değer ('+(o.metric==='pay'?'yıl':CUR())+')</label><input id="op-target" type="text" inputmode="decimal" data-opt="target" value="'+(ok?String(T).replace('.',','):'')+'"><small>'+(ok?'Şimdiki değer '+M.fm(base)+'. Başlangıç hedefi otomatik önerilir, kendi değerinizi yazın.':'')+'</small></div>'+
+    '<div class="fld"><label for="op-detail">Gider ayrıntısı</label>'+sel('detail',[['group','Grup bazında'],['line','Kalem bazında']])+'</div></div></div>'+
+    '<div id="opt-out2">'+optOut2()+'</div>';
+}
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t.dataset||t.dataset.opt!=='target')return;
+  const o=optOf();o.target=t.value;o.targetMetric=o.metric;
+  const out=$('#opt-out2');if(out)out.innerHTML=optOut2();
 });
 function render(){
   renderTop();
