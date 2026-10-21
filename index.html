@@ -200,6 +200,19 @@ body.locked .wrap{display:none}.dlg.lock{background:var(--bg,#f4f6f6);align-item
   th,td{padding:5px 6px}
   .mobonly{display:inline-block}
 }
+
+.osub{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.osub button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;min-height:34px}
+.osub button.on{background:var(--accent);border-color:var(--accent);color:#fff}.osub button:disabled{opacity:.5}
+details summary{cursor:pointer;font-size:13px;color:var(--accent)}
+.tor{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.torow{display:grid;grid-template-columns:240px 1fr;gap:10px;align-items:center}
+.tonm{font-size:13px}.tobx{position:relative;height:26px}
+.tobx u{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
+.tobar{position:absolute;top:4px;bottom:4px;border-radius:3px}.tobar.l{right:50%}.tobar.r{left:50%}
+.tobar.dn{background:var(--muted);opacity:.7}.tobar.up{background:var(--accent)}
+.toval{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+@media (max-width:640px){.otab td:first-child,.otab th:first-child{white-space:normal;min-width:120px;max-width:140px}.torow{grid-template-columns:1fr;gap:2px}.tonm{font-weight:500}}
 </style>
 
 <div class="wrap" id="app">
@@ -227,6 +240,7 @@ body.locked .wrap{display:none}.dlg.lock{background:var(--bg,#f4f6f6);align-item
     <button role="tab" data-click="tab:geridonus" id="t-geridonus">Geri dönüş</button>
     <button role="tab" data-click="tab:dcf" id="t-dcf">DCF</button>
     <button role="tab" data-click="tab:capex" id="t-capex">Renovasyon</button>
+    <button role="tab" data-click="tab:optim" id="t-optim">Optimizasyon</button>
     <button role="tab" data-click="tab:kilavuz" id="t-kilavuz">Kılavuz</button>
   </nav>
   <main id="view"></main>
@@ -577,7 +591,7 @@ function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTim
 function renderTop(){
   $('#curSel').value=cur0(P());
   $('#projSel').innerHTML=S.projects.map(p=>`<option value="${p.id}" ${p.id===S.active?'selected':''}>${esc(p.name)}</option>`).join('');
-  ['girdiler','kalemler','pl','kpi','geridonus','dcf','capex','kilavuz'].forEach(t=>$('#t-'+t).setAttribute('aria-selected',S.tab===t));
+  ['girdiler','kalemler','pl','kpi','geridonus','dcf','capex','optim','kilavuz'].forEach(t=>$('#t-'+t).setAttribute('aria-selected',S.tab===t));
   renderStrip();updSt();renderAcct();renderDlg();
 }
 function renderStrip(){
@@ -789,9 +803,10 @@ function kvCalc(){
   dc.method='gordon';dc.netDebt=0;dc.price=0;
   cp.profile='uu';cp.soft=cpxMid(CX.s);cp.full=cpxMid(CX.f);
   const cx=cpxPlan(p);
+  const pO=pclone(EXAMPLE_PROJ),opt1=optSens(pO,'noi',10,'group'),opt2=optSens(pO,'gop',10,'group'),RR0=sum(compute(pO).roomRev);
   cp.link=true;const pb3=run(),dcf3=dcfCalc(p);cp.link=false;
   const cpxRows=cx.rows.filter(r=>r.capex>0||r.t<1);
-  return {p,c,AV,SO,RR,REV,L,staffTot:sum(c.staff),pb1,pb2,pb3,dcf1,dcf2,dcf3,sens,cx,cpxRows,
+  return {opt1,opt2,RR0,p,c,AV,SO,RR,REV,L,staffTot:sum(c.staff),pb1,pb2,pb3,dcf1,dcf2,dcf3,sens,cx,cpxRows,
     hz:{cap:c.avail[5],sold:c.sold[5],rev:c.roomRev[5],gn:c.gn[5],may:{cap:c.avail[4],sold:c.sold[4],rev:c.roomRev[4]}}};
 }
 const pp=v=>'%'+pct(v).slice(0,-1);
@@ -806,7 +821,7 @@ function tb(head,rows){
 }
 const KSEC=[
  ['basla','Başlarken',v=>`<p>Uygulama, doluluk ve ADR'den başlayarak P&amp;L, KPI, geri dönüş, DCF ve renovasyon hesaplarını tek yerde yapar. Sekmeler soldan sağa bir sırayı izler: önce girdiler, en sonda yatırım kararı.</p>`+
-  tb(['Sekme','Ne işe yarar','Ne zaman'],[['Girdiler','Oda sayısı, aylık doluluk, ADR ve kurlar','Her projeye önce buradan başlanır'],['Gelir-Gider','Gelir ve gider kalemleri ve hesaplama biçimleri','Maliyet yapısı kurulurken'],['P&amp;L','Gelirden GOP ve NOI\'ye giden tablo','Sonucu okurken'],['KPI','Doluluk, ADR, RevPAR, GOPPAR','Oteli başka otellerle kıyaslarken'],['Geri dönüş','Yatırımın kaç yılda geri döndüğü','Satın alma kararında'],['DCF','Otelin bugünkü değeri','Fiyat pazarlığında'],['Renovasyon','Yenileme bütçesi ve getiriye etkisi','Capex planlanırken']])+
+  tb(['Sekme','Ne işe yarar','Ne zaman'],[['Girdiler','Oda sayısı, aylık doluluk, ADR ve kurlar','Her projeye önce buradan başlanır'],['Gelir-Gider','Gelir ve gider kalemleri ve hesaplama biçimleri','Maliyet yapısı kurulurken'],['P&amp;L','Gelirden GOP ve NOI\'ye giden tablo','Sonucu okurken'],['KPI','Doluluk, ADR, RevPAR, GOPPAR','Oteli başka otellerle kıyaslarken'],['Geri dönüş','Yatırımın kaç yılda geri döndüğü','Satın alma kararında'],['DCF','Otelin bugünkü değeri','Fiyat pazarlığında'],['Renovasyon','Yenileme bütçesi ve getiriye etkisi','Capex planlanırken'],['Optimizasyon','Hangi varsayım sonucu en çok oynatıyor (tornado)','Neye odaklanacağınıza karar verirken']])+
   `<h3>Örnek case</h3><p>Bu kılavuzdaki tüm sayılar tek bir örnekten gelir ve <b>bu sayfada uygulamanın kendi hesabıyla üretilir</b>: Bodrum'da 29 odalı bir butik otel. Rakamlar öğretici amaçlıdır. Aynı projeyi Aç menüsünden "Hazır örnekler" altında açıp kendiniz deneyebilirsiniz.</p>`+
   tb(['Girdi','Değer'],[['Oda sayısı','29, 12 ay açık'],['Doluluk','%65, tüm aylar'],['ADR','200 EUR (Haziran–Eylül), 125 EUR (diğer aylar)'],['Oda başına misafir','2'],['Ana para birimi ve kurlar','EUR. 1 USD = 49,57 TL, 1 EUR = 55,64 TL'],['Personel','3 kişi, kişi başı brüt 75.000 TL × 1,2375 = 92.812,50 TL/ay'],['F&amp;B','Markaya kiralama, 1.000.000 TL/ay kira geliri'],['Örnek için eklenenler','OTA komisyonu (oda gelirinin %15\'i), sigorta ve emlak vergisi (3.000 EUR/ay)'],['Satın alma fiyatı','8.000.000 EUR (geri dönüş ve DCF için)']])+
   `<p class="hint">Kurlar 20–21 Ekim 2026 değerleridir, elle girilir, canlı değildir.</p>`],
@@ -873,6 +888,13 @@ const KSEC=[
   tb(['Yıl','Capex','Kayıp','Artış','Net','Kümülatif'],v.cpxRows.map(r=>[r.t,nf.format(r.capex),nf.format(r.lost),nf.format(r.up),sf(r.net),sf(r.cum)]))+
   `<p>Bu otelde ADR artışı varsayımı (%6) yenileme maliyetini karşılamıyor. Getiriyi pozitife çevirmek için kapsamı soft goods'a düşürün ya da ADR artışını gerçekçi bir hedefe göre ayarlayın.</p>
   <h3>Diğer sekmelerle bağlantı</h3><p>Renovasyon sekmesindeki "Geri dönüş ve DCF sekmelerine ekle" kutusunu işaretlerseniz yenileme yatırımı, kaybı ve artışı iki sekmenin hesaplarına eklenir (Geri dönüş: yatırım ${nf.format(v.pb3.I0)} EUR; DCF: EV ${nf.format(v.dcf3.ev)} EUR).</p>`;}],
+ ['optim','Optimizasyon: duyarlılık',v=>{const r=v.opt1,t=r.rows[0],g=v.opt2,M=OPT_METRICS.noi;return `<p>Optimizasyon sekmesi, hangi varsayımın sonucu en çok oynattığını gösterir. Her girdiyi tek tek %10 yukarı ve %10 aşağı çeker, geri kalanını sabit tutar, NOI veya seçtiğiniz ölçütün ne kadar değiştiğini ölçer. Sonuç bir tornado grafiğidir: en uzun çubuk en önemli kaldıraçtır. Sekmede dört modül planlıdır; şimdilik 1. modül (Duyarlılık) açıktır.</p>
+  <h3>Nasıl okunur</h3><ol><li>Sonuç ölçütünü seçin: NOI, GOP, DCF işletme değeri veya geri dönüş süresi. DCF ve geri dönüş, kendi sekmelerindeki varsayımları kullanır.</li><li>Değişim adımını seçin (±%5 ile ±%25). Adım büyüdükçe çubuklar uzar, sıralama genelde aynı kalır.</li><li>Gider ayrıntısını seçin: "Grup bazında" kalemleri gruplar halinde, "Kalem bazında" her kalemi ayrı oynatır (örneğin OTA komisyonunu ayrı görmek için).</li><li>Çubuk renkleri girdinin yönünü gösterir: gri, girdi azalırsa; yeşil, girdi artarsa. Gelirde artış sonucu yükseltir, giderde artış düşürür; bu yüzden gider çubukları ters taraftadır.</li></ol>
+  <h3>Örnek case: ${M.n} ±%10</h3><p>Baz NOI ${nf.format(Math.round(r.base))} EUR. En çok oynatan kaldıraçlar:</p>`+
+  tb(['Kaldıraç','Girdi −%10','Girdi +%10','Esneklik'],r.rows.slice(0,6).map(x=>[x.lv.name,sf(x.lo),sf(x.hi),(x.el>=0?'+':'−')+Math.abs(x.el).toFixed(2).replace('.',',')]))+
+  `<p><b>Esneklik</b>, girdi %1 değişince sonucun yüzde kaç değiştiğidir. ADR'de ${(t.el).toFixed(2).replace('.',',')}: ADR %1 artarsa NOI yaklaşık %${(t.el).toFixed(2).replace('.',',')} artar. Eksi esneklik, girdi artınca sonuç düşer demektir (giderler).</p>
+  <p><b>Doğrulama:</b> ADR'yi %10 artırınca oda geliri ${nf.format(Math.round(v.RR0))} EUR × %10 = ${nf.format(Math.round(v.RR0*0.1))} EUR artar. Bunun %15'i OTA komisyonuna, %4'ü FF&amp;E rezervine gider; kalan %81 NOI'ye yansır: ${nf.format(Math.round(v.RR0*0.1))} × 0,81 = ${nf.format(Math.round(v.RR0*0.081))} EUR. Tabloda ADR +%10 satırı ${sf(t.hi)} EUR, yani el hesabıyla aynı.</p>
+  <h3>Dikkat edilecekler</h3><ul><li>Doluluk göreli değişir: %65 doluluk %10 artınca %71,5 olur, %100'ü geçmez.</li><li>Tornado her kaldıracı tek başına oynatır. Gerçekte ADR yükselirse doluluk düşebilir; bu etkileşimi 4. modül (fiyat-doluluk) ele alacak.</li><li>Kur etkisi (TL giderlerin euro karşılığı) bu modülde yoktur; Girdiler sekmesinden kur değiştirerek bakabilirsiniz.</li><li>Sıralama bir öneri değildir: bir kaldıracın hassas olması, onu kolay değiştirebileceğiniz anlamına gelmez. Neye odaklanacağınızı seçerken ölçüt budur.</li></ul>`;}],
  ['kayit','Kaydet, Aç ve şablonlar',v=>`<p>Üst çubuktaki üç düğme çalışmalarınızı kalıcı biçimde saklar. Üzerinde çalıştığınız proje tarayıcıda otomatik tutulur; <b>Kaydet</b> ise onu adlandırılmış bir kayıt olarak kütüphaneye ekler.</p>
   <ul><li><b>Kaydet:</b> proje daha önce kaydedildiyse aynı kaydı günceller, ilk kez kaydediliyorsa Farklı kaydet penceresini açar. Yanındaki durum yazısı "Kaydedildi", "Kaydedilmemiş değişiklik" veya "Kütüphaneye kaydedilmedi" der.</li>
   <li><b>Farklı kaydet:</b> projeyi yeni bir adla kaydeder. Tür seçersiniz: <i>Case</i> üzerinde çalışmaya devam edeceğiniz kayıttır, Kaydet onu günceller. <i>Şablon</i> her açtığınızda yeni bir kopya verir ve kendisi değişmez.</li>
@@ -900,10 +922,108 @@ function viewKilavuz(){
    <article class="panel kbody"><h2 class="kh">${sec[1]}</h2>${sec[2](KV)}
    <div class="kpn">${prev?`<button class="btn" data-click="kil:${prev[0]}">← ${prev[1]}</button>`:'<span></span>'}${next?`<button class="btn" data-click="kil:${next[0]}">${next[1]} →</button>`:''}</div></article></div>`;
 }
+/* ---------- Sekme: Optimizasyon. Modül 1: Duyarlılık (tornado). Motora dokunmaz, compute/dcfCalc/pbCalc çıktısını okur ---------- */
+const OPT_METRICS={
+  noi:{n:'NOI (FF&E sonrası)',get:p=>sum(compute(p).noi),fm:v=>fmt(v),fd:v=>optS(v),u:()=>CUR()+', yıllık'},
+  gop:{n:'GOP',get:p=>sum(compute(p).gop),fm:v=>fmt(v),fd:v=>optS(v),u:()=>CUR()+', yıllık'},
+  ev:{n:'İşletme değeri (DCF EV)',get:p=>{const x=dcfCalc(p);return x.ev;},fm:v=>fmt(v),fd:v=>optS(v),u:()=>CUR()+', DCF sekmesi varsayımlarıyla'},
+  pay:{n:'Geri dönüş süresi',get:p=>{const x=pbCalc(p);return x.I0>0?(x.pay===null?x.N:x.pay):null;},fm:v=>n2y(v),fd:v=>(v>0?'+':v<0?'−':'')+nf2.format(Math.abs(v))+' yıl',u:()=>'yıl, Geri dönüş sekmesi varsayımlarıyla'}
+};
+const n2y=v=>{const m=Math.round(v*12);return Math.floor(m/12)+' yıl '+(m%12)+' ay';};
+const optS=v=>{const r=Math.round(v);return (r>0?'+':r<0?'−':'')+nf.format(Math.abs(r));};
+const optP=v=>(v>0?'+':v<0?'−':'')+'%'+Math.abs(v*100).toFixed(1).replace('.',',');
+const OPT_DEF={metric:'noi',step:10,detail:'group'};
+function optOf(){if(!S.opt)S.opt=Object.assign({},OPT_DEF);return S.opt;}
+/* Kaldıraçlar: her biri, proje kopyasında bir girdi grubunu f katsayısıyla çarpar */
+function optLevers(p,detail){
+  const c=compute(p),L=[];
+  const ln=l=>sum(c.line[l.id]||[]);
+  L.push({id:'occ',name:'Doluluk (tüm aylar)',hint:'göreli değişim: %65 doluluk, %10 artışta %71,5 olur. %100 ile sınırlı.',ap:(q,f)=>{q.occ=q.occ.map(v=>Math.min(100,v*f));}});
+  L.push({id:'adr',name:'ADR (tüm aylar)',hint:'tüm aylarda ortalama oda fiyatı',ap:(q,f)=>{q.adr=q.adr.map(v=>v*f);}});
+  if(p.guests>0)L.push({id:'guests',name:'Oda başına misafir',hint:'kişi başı gelir ve giderleri etkiler',ap:(q,f)=>{q.guests*=f;}});
+  if(p.ffe>0)L.push({id:'ffe',name:'FF&E rezerv oranı',hint:'gelirin yüzdesi olarak ayrılan rezerv',ap:(q,f)=>{q.ffe*=f;}});
+  const scale=ids=>(q,f)=>{q.lines.forEach(l=>{if(ids.has(l.id)){l.value=(+l.value||0)*f;if(l.monthly)l.monthly=l.monthly.map(v=>(+v||0)*f);}});};
+  const lines=p.lines.filter(l=>l.driver!=='roomrev');
+  if(detail==='line'){
+    lines.forEach(l=>{if(Math.abs(ln(l))>1e-9)L.push({id:'l:'+l.id,name:gname(l.group)+': '+l.name,hint:'tek kalemin katsayısı veya tutarı',ap:scale(new Set([l.id]))});});
+  }else{
+    const st=lines.filter(l=>l.staff);
+    if(st.length&&sum(c.staff)>0)L.push({id:'staff',name:'Personel giderleri (tüm bölümler)',hint:'personel olarak işaretli tüm kalemler',ap:scale(new Set(st.map(l=>l.id)))});
+    GROUPS.filter(g=>g.id!=='rev_room').forEach(g=>{
+      const ls=lines.filter(l=>l.group===g.id&&!l.staff);
+      if(ls.length&&ls.some(l=>Math.abs(ln(l))>1e-9))
+        L.push({id:'g:'+g.id,name:g.name+(lines.some(l=>l.group===g.id&&l.staff)?' – personel hariç':''),hint:'gruptaki tüm kalemler',ap:scale(new Set(ls.map(l=>l.id)))});
+    });
+  }
+  return L;
+}
+function optSens(p,metric,step,detail){
+  const M=OPT_METRICS[metric],s=step/100,base=M.get(p);
+  if(base===null||base===undefined||!isFinite(base))return {base:null,rows:[]};
+  const rows=[];
+  optLevers(p,detail).forEach(lv=>{
+    const run=f=>{const q=pclone(p);lv.ap(q,f);return M.get(q);};
+    const lo=run(1-s),hi=run(1+s);
+    if(lo===null||hi===null||!isFinite(lo)||!isFinite(hi))return;
+    const dl=lo-base,dh=hi-base;
+    if(Math.abs(dl)<1e-6&&Math.abs(dh)<1e-6)return;
+    rows.push({lv,lo:dl,hi:dh,swing:Math.abs(dh-dl),el:base?((dh-dl)/(2*s))/Math.abs(base):0});
+  });
+  rows.sort((a,b)=>b.swing-a.swing);
+  return {base,rows,step,metric};
+}
+function optChart(r,M){
+  const mx=Math.max(1e-9,...r.rows.map(x=>Math.max(Math.abs(x.lo),Math.abs(x.hi))));
+  const W=32,bar=(d,cls,lab)=>{const w=Math.abs(d)/mx*W,side=d<0?'l':'r';
+    return '<i class="tobar '+cls+' '+side+'" style="width:'+w.toFixed(2)+'%" title="'+esc(lab)+'"></i><span class="toval '+side+'" style="'+(d<0?'right':'left')+':calc(50% + '+w.toFixed(2)+'% + 4px)">'+M.fd(d)+'</span>';};
+  return '<div class="tor">'+r.rows.map(x=>{
+    const a=(x.lo>=0&&x.hi>=0)||(x.lo<=0&&x.hi<=0);
+    return '<div class="torow"><div class="tonm" title="'+esc(x.lv.hint)+'">'+esc(x.lv.name)+'</div><div class="tobx"><u></u>'+bar(x.lo,'dn','Girdi −%'+r.step+': '+M.fd(x.lo))+bar(x.hi,'up','Girdi +%'+r.step+': '+M.fd(x.hi))+'</div></div>';
+  }).join('')+'</div>';
+}
+function optInsight(r,M,p){
+  if(!r.rows.length)return '';
+  const top=r.rows.slice(0,3),tot=sum(r.rows.map(x=>x.swing)),sh=top.reduce((a,x)=>a+x.swing,0)/(tot||1);
+  const t=r.rows[0],dir=(t.hi-t.lo)>=0?'artması':'azalması';
+  const up=(t.hi-t.lo)>=0?t.hi:t.lo;
+  return '<p><b>Okuma:</b> en duyarlı kaldıraç <b>'+esc(t.lv.name)+'</b>. Girdisi %'+r.step+' '+dir+' halinde '+M.n+' '+M.fd(up)+(r.base?' ('+optP(up/Math.abs(r.base))+')':'')+' değişiyor. İlk üç kaldıraç ('+top.map(x=>esc(x.lv.name)).join(', ')+') toplam salınımın %'+Math.round(sh*100)+'\'ini oluşturuyor.</p>';
+}
+function optOut(){
+  const p=P(),o=optOf(),M=OPT_METRICS[o.metric];
+  const r=optSens(p,o.metric,+o.step,o.detail);
+  if(r.base===null)return '<div class="panel"><h2>Sonuç</h2><p class="hint">'+(o.metric==='pay'?'Geri dönüş süresi hesaplanamıyor: Geri dönüş sekmesinde yatırım tutarı girin.':o.metric==='ev'?'DCF değeri hesaplanamıyor: DCF sekmesinde büyüme oranı iskonto oranından küçük olmalı (veya çıkış cap rate girilmeli).':'Sonuç hesaplanamıyor.')+'</p></div>';
+  const tb2=r.rows.map(x=>'<tr><td>'+esc(x.lv.name)+'</td><td class="n">'+M.fd(x.lo)+'</td><td class="n">'+M.fd(x.hi)+'</td><td class="n">'+(o.metric==='pay'?nf2.format(Math.abs(x.hi-x.lo)):nf.format(Math.round(x.swing)))+'</td><td class="n">'+(x.el>=0?'+':'−')+Math.abs(x.el).toFixed(2).replace('.',',')+'</td></tr>').join('');
+  return '<div class="kpis">'+
+    '<div class="kpi"><small>Baz sonuç: '+M.n+'</small><b>'+M.fm(r.base)+'</b><em>'+M.u()+'</em></div>'+
+    '<div class="kpi"><small>Değişim adımı</small><b>±%'+o.step+'</b><em>her kaldıraç ayrı ayrı oynatılır</em></div>'+
+    '<div class="kpi"><small>Etkili kaldıraç</small><b>'+r.rows.length+'</b><em>sonucu değiştiren</em></div></div>'+
+    '<div class="panel"><h2>Tornado: '+M.n+' üzerindeki etki</h2>'+
+    '<div class="legend"><span><i style="background:var(--muted)"></i>Girdi %'+o.step+' azalırsa</span><span><i style="background:var(--accent)"></i>Girdi %'+o.step+' artarsa</span></div>'+
+    optChart(r,M)+optInsight(r,M,p)+'</div>'+
+    '<div class="panel"><h2>Tablo</h2><div class="scroll"><table class="pbt otab"><thead><tr><th>Kaldıraç</th><th class="n">Girdi −%'+o.step+'</th><th class="n">Girdi +%'+o.step+'</th><th class="n">Salınım</th><th class="n">Esneklik</th></tr></thead><tbody>'+tb2+'</tbody></table></div>'+
+    '<p class="hint">Etkiler baz sonuca göre farktır ('+(o.metric==='pay'?'yıl':CUR())+'). Esneklik: girdi %1 artınca sonuç yüzde kaç değişir (örn. +0,50 → girdi %1 artarsa sonuç %0,5 artar). Salınım: iki uç arasındaki fark, sıralama ölçütüdür.</p></div>';
+}
+function viewOptim(){
+  const o=optOf();
+  const sel=(k,opts)=>'<select id="op-'+k+'" data-opt="'+k+'">'+opts.map(a=>'<option value="'+a[0]+'"'+(String(o[k])===String(a[0])?' selected':'')+'>'+a[1]+'</option>').join('')+'</select>';
+  return '<div class="osub" role="group" aria-label="Optimizasyon modülleri"><button class="on" aria-pressed="true">1 Duyarlılık</button>'+
+    '<button disabled title="Sıradaki modül">2 Hedef arama</button><button disabled title="Sıradaki modül">3 Capex portföyü</button><button disabled title="Sıradaki modül">4 Fiyat-doluluk</button></div>'+
+    '<div class="panel"><h2>Duyarlılık analizi</h2>'+
+    '<details open><summary>Ne işe yarar</summary><p class="hint" style="margin-top:6px">Her girdiyi tek tek yukarı ve aşağı oynatıp seçtiğiniz sonucun (NOI, GOP, DCF değeri, geri dönüş) ne kadar değiştiğini ölçer. En uzun çubuk, en çok dikkat edilmesi gereken kaldıraçtır. Hangi varsayımın yanlış çıkması sonucu en çok bozar, ve pazarlık veya yönetim eforu nereye harcanmalı sorularını cevaplar. Sonraki modüller (hedef arama, capex portföyü) bu sıralamayla başlar.</p></details>'+
+    '<div class="pbform" style="margin-top:12px">'+
+    '<div class="fld"><label for="op-metric">Sonuç ölçütü</label>'+sel('metric',Object.keys(OPT_METRICS).map(k=>[k,OPT_METRICS[k].n]))+'</div>'+
+    '<div class="fld"><label for="op-step">Değişim adımı</label>'+sel('step',[[5,'±%5'],[10,'±%10'],[20,'±%20'],[25,'±%25']])+'</div>'+
+    '<div class="fld"><label for="op-detail">Gider ayrıntısı</label>'+sel('detail',[['group','Grup bazında'],['line','Kalem bazında']])+'</div>'+
+    '</div></div><div id="opt-out">'+optOut()+'</div>';
+}
+document.addEventListener('change',e=>{
+  const t=e.target,k=t.dataset&&t.dataset.opt;if(!k)return;
+  optOf()[k]=k==='step'?+t.value:t.value;render();
+});
 function render(){
   renderTop();
   const v=$('#view');
-  v.innerHTML=S.tab==='girdiler'?curPanel(P())+viewGirdiler():S.tab==='kalemler'?viewKalemler():S.tab==='pl'?viewPL():S.tab==='geridonus'?viewPayback():S.tab==='dcf'?viewDCF():S.tab==='capex'?viewCapex():S.tab==='kilavuz'?viewKilavuz():viewKPI();
+  v.innerHTML=S.tab==='girdiler'?curPanel(P())+viewGirdiler():S.tab==='kalemler'?viewKalemler():S.tab==='pl'?viewPL():S.tab==='geridonus'?viewPayback():S.tab==='dcf'?viewDCF():S.tab==='capex'?viewCapex():S.tab==='kilavuz'?viewKilavuz():S.tab==='optim'?viewOptim():viewKPI();
 }
 function refreshDerived(){
   const p=P(),c=compute(p);
@@ -1349,7 +1469,7 @@ document.addEventListener('change',e=>{
 document.addEventListener('click',e=>{const x=e.target.closest&&e.target.closest('[data-click="copyCPX"]');if(x)copyText(cpxTSV(),'Capex takvimi kopyalandı. Excel\'e yapıştırabilirsiniz.');});
 
 const h=(location.hash||'').slice(1);
-if(['girdiler','kalemler','pl','kpi','geridonus','dcf','capex','kilavuz'].includes(h))S.tab=h;
+if(['girdiler','kalemler','pl','kpi','geridonus','dcf','capex','optim','kilavuz'].includes(h))S.tab=h;
 render();
 window.__test={compute,P:()=>P()};
 </script>
